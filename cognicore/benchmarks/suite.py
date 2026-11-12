@@ -409,16 +409,16 @@ def _cli_main():
     args = parser.parse_args()
 
     suite = BenchmarkSuite(episodes=args.episodes, seed=args.seed)
-    print("\n  Running CogniCore benchmarks...")
+    logger.info("\n  Running CogniCore benchmarks...")
     result = suite.run(quick=args.quick, skip_backend=args.skip_backend)
     print(result.summary())
 
     if args.output:
         result.to_json(args.output)
-        print(f"  Results saved to {args.output}")
+        logger.info(f"  Results saved to {args.output}")
     if args.csv:
         result.to_csv(args.csv)
-        print(f"  CSV saved to {args.csv}")
+        logger.info(f"  CSV saved to {args.csv}")
 
 
 if __name__ == "__main__":

@@ -76,7 +76,7 @@ class ReflectionEngine:
         for entry in entries:
             # Use predicted, fall back to action, else empty string
             predicted = str(entry.action or "").strip()
-            
+
             if entry.correct is True:
                 good[predicted] = good.get(predicted, 0) + 1
             elif entry.correct is False:

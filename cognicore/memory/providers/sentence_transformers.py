@@ -19,7 +19,7 @@ class SentenceTransformerProvider(EmbeddingProvider):
                 "The 'sentence-transformers' package is required for SentenceTransformerProvider. "
                 "Install it with: pip install sentence-transformers"
             )
-        
+
         self.model_name = model_name
         self.model = SentenceTransformer(model_name)
         # We can determine the dimension by running a dummy embedding

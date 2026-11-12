@@ -64,14 +64,14 @@ class MemoryManager:
 
         # Save memory entries
         memory_path = os.path.join(d, "memory.json")
-        with open(memory_path, "w") as f:
+        with open(memory_path, "w", encoding="utf-8") as f:
             json.dump(env.memory.entries, f, indent=2, default=str)
 
         # Append to episode history
         history_path = os.path.join(d, "history.json")
         history = []
         if os.path.exists(history_path):
-            with open(history_path) as f:
+            with open(history_path, encoding="utf-8") as f:
                 history = json.load(f)
 
         stats = env.episode_stats()
@@ -88,7 +88,7 @@ class MemoryManager:
             }
         )
 
-        with open(history_path, "w") as f:
+        with open(history_path, "w", encoding="utf-8") as f:
             json.dump(history, f, indent=2)
 
         # Save metadata
@@ -102,13 +102,13 @@ class MemoryManager:
         }
 
         if os.path.exists(meta_path):
-            with open(meta_path) as f:
+            with open(meta_path, encoding="utf-8") as f:
                 existing = json.load(f)
             meta["created"] = existing.get("created", time.time())
         else:
             meta["created"] = time.time()
 
-        with open(meta_path, "w") as f:
+        with open(meta_path, "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2)
 
         return d
@@ -124,7 +124,7 @@ class MemoryManager:
         if not os.path.exists(memory_path):
             return False
 
-        with open(memory_path) as f:
+        with open(memory_path, encoding="utf-8") as f:
             entries = json.load(f)
 
         env.memory.entries = entries
@@ -135,7 +135,7 @@ class MemoryManager:
         history_path = os.path.join(self._agent_dir(agent_id), "history.json")
         if not os.path.exists(history_path):
             return []
-        with open(history_path) as f:
+        with open(history_path, encoding="utf-8") as f:
             return json.load(f)
 
     def get_metadata(self, agent_id: str) -> Dict[str, Any]:
@@ -143,7 +143,7 @@ class MemoryManager:
         meta_path = os.path.join(self._agent_dir(agent_id), "metadata.json")
         if not os.path.exists(meta_path):
             return {}
-        with open(meta_path) as f:
+        with open(meta_path, encoding="utf-8") as f:
             return json.load(f)
 
     def list_sessions(self) -> List[Dict[str, Any]]:

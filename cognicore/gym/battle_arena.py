@@ -12,6 +12,9 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from typing import Optional, Dict, Any, Tuple
+import logging
+logger = logging.getLogger("cognicore.gym.battle_arena")
+
 
 
 class BattleArenaGym(gym.Env):
@@ -20,7 +23,7 @@ class BattleArenaGym(gym.Env):
     Obs: [my_row, my_col, my_health, opp_row, opp_col, opp_health,
           distance, my_attack, my_defense]
     Action: Discrete(6) — UP/DOWN/LEFT/RIGHT/ATTACK/DEFEND
-    
+
     Player 1 is the learning agent. Player 2 uses a built-in heuristic.
     """
 

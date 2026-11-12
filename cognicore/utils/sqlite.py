@@ -19,7 +19,7 @@ def connect_sqlite(path: Union[str, Path], timeout: float = 30.0) -> sqlite3.Con
     if db_path != ":memory:":
         busy_timeout_ms = int(timeout * 1000)
         conn.execute(f"PRAGMA busy_timeout={busy_timeout_ms}")
-        
+
         # Retry WAL mode since it requires an exclusive lock and can bypass the busy_timeout on Windows
         import time
         for _ in range(10):
@@ -31,7 +31,7 @@ def connect_sqlite(path: Union[str, Path], timeout: float = 30.0) -> sqlite3.Con
                     time.sleep(0.1)
                 else:
                     raise
-                    
+
         conn.execute("PRAGMA synchronous=NORMAL")
 
     return conn

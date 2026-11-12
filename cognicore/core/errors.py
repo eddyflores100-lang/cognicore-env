@@ -16,6 +16,9 @@ Usage::
 """
 
 from __future__ import annotations
+import logging
+logger = logging.getLogger("cognicore.core.errors")
+
 
 
 class CogniCoreError(Exception):

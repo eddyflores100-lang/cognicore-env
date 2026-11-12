@@ -87,7 +87,7 @@ def _ensure_initialized():
         return
 
     from cognicore.runtime import CogniCoreRuntime, RuntimeConfig
-    
+
     path = _get_data_dir() / "mcp_memories.db"
     _runtime = CogniCoreRuntime(
         config=RuntimeConfig(persistence_path=str(path), memory_backend="sqlite"),

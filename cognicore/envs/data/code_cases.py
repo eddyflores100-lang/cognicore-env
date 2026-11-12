@@ -303,7 +303,7 @@ HARD_CASES = [
     CodeCase(
         id="code_hard_02",
         language="python",
-        buggy_code="import os\n\ndef read_user_file(username, filename):\n    path = f'/data/users/{username}/{filename}'\n    with open(path) as f:\n        return f.read()",
+        buggy_code="import os\n\ndef read_user_file(username, filename):\n    path = f'/data/users/{username}/{filename}'\n    with open(path, encoding="utf-8") as f:\n        return f.read()",
         bug_description="Path traversal vulnerability — user can pass '../../../etc/passwd' as filename.",
         bug_line=4,
         fix_type="security_vulnerability",

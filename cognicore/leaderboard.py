@@ -34,12 +34,12 @@ class Leaderboard:
 
     def _load(self) -> Dict[str, Any]:
         if os.path.exists(self._file):
-            with open(self._file) as f:
+            with open(self._file, encoding="utf-8") as f:
                 return json.load(f)
         return {"entries": []}
 
     def _save(self):
-        with open(self._file, "w") as f:
+        with open(self._file, "w", encoding="utf-8") as f:
             json.dump(self._data, f, indent=2)
 
     def submit(

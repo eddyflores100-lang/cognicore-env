@@ -88,7 +88,7 @@ class ElevenLabsAdapter(CognitiveAdapter):
         """Initialize with a Cognitive Fabric.
 
         Args:
-            fabric: The Cognitive Fabric instance handling semantic translation. 
+            fabric: The Cognitive Fabric instance handling semantic translation.
                     (Or a raw MemoryBackend for backward compatibility).
         """
         if hasattr(fabric, "backend"):
@@ -99,21 +99,21 @@ class ElevenLabsAdapter(CognitiveAdapter):
             from cognicore.fabric.registry import get_fabric
             self.fabric = get_fabric(fabric)
             self.backend = fabric
-            
+
         super().__init__(self.fabric)
 
     def observe(self, action: str, context: Dict[str, Any]) -> str:
         """Layer 1: Raw observation."""
         return self.fabric.record_observation("elevenlabs", action, context)
-        
+
     def learn(self, **kwargs) -> str:
         """Alias for learn_from_generation to fulfill CognitiveAdapter."""
         return self.learn_from_generation(**kwargs)
-        
+
     def feedback(self, action_id: str, success_score: float, **kwargs) -> None:
         """Alias for record_feedback to fulfill CognitiveAdapter."""
         self.record_feedback(action_id, rating=success_score, **kwargs)
-        
+
     def recommend(self, **kwargs) -> Dict[str, Any]:
         """
         Layer 3: Get translated recommendations from the Fabric.
@@ -123,7 +123,7 @@ class ElevenLabsAdapter(CognitiveAdapter):
         fabric_rec = self.fabric.translate_for_tool("elevenlabs", kwargs)
         if fabric_rec:
             return fabric_rec
-            
+
         # Fall back to local local intelligence
         return self.recommend_settings(**kwargs)
 

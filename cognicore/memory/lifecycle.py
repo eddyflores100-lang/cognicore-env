@@ -3,7 +3,7 @@ import uuid
 from typing import Dict, List, Optional, Any, Callable
 
 from cognicore.memory.base import (
-    MemoryEntry, MemoryState, MemoryType, MemoryBackend, 
+    MemoryEntry, MemoryState, MemoryType, MemoryBackend,
     SearchResult, RetrievalPlan, MemoryTrace, EvaluationResult
 )
 from cognicore.memory.evaluator import MemoryEvaluator, RuleBasedEvaluator
@@ -13,12 +13,12 @@ from cognicore.memory.utility import UtilityScorer
 
 class MemoryLifecycleManager:
     """Central orchestrator for the memory operating system.
-    
+
     Provides the complete memory lifecycle:
     observe → evaluate → store → retrieve → measure → promote/decay
     """
-    
-    def __init__(self, 
+
+    def __init__(self,
                  backend: MemoryBackend,
                  evaluator: Optional[MemoryEvaluator] = None,
                  planner: Optional[RetrievalPlanner] = None,
@@ -30,16 +30,16 @@ class MemoryLifecycleManager:
         self._traces: List[MemoryTrace] = []
         self._trace_counter = 0
 
-    def observe(self, text: str, context: Optional[Dict] = None, 
-                source_component: str = '', source_agent: str = '', 
+    def observe(self, text: str, context: Optional[Dict] = None,
+                source_component: str = '', source_agent: str = '',
                 source_task: str = '') -> Optional[str]:
         """Process an observation and decide whether to store it as memory."""
         context = context or {}
         evaluation = self.evaluator.evaluate(text, context)
-        
+
         if not evaluation.should_store:
             return None
-            
+
         entry = MemoryEntry(
             text=text,
             memory_type=evaluation.memory_type,
@@ -53,7 +53,7 @@ class MemoryLifecycleManager:
             timestamp=time.time(),
             last_accessed=time.time()
         )
-        
+
         entry_id = self.backend.store(entry)
         return entry_id
 
@@ -61,26 +61,26 @@ class MemoryLifecycleManager:
         """Retrieve memories using the intelligent planner."""
         context = context or {}
         plan = self.planner.plan(query, task, context)
-        
+
         if not plan.should_retrieve:
             return []
-            
+
         # Use plan's budget, cap with provided top_k if necessary, or just use budget
         budget = min(plan.budget, top_k) if plan.budget > 0 else top_k
         results = self.backend.search(query, top_k=budget)
-        
+
         if plan.memory_types:
             results = [r for r in results if r.entry.memory_type in plan.memory_types]
-            
+
         # Update utility tracker for retrieved entries
         for result in results:
             self.scorer.on_retrieval(result.entry)
             self.backend.update(
-                result.entry.entry_id, 
+                result.entry.entry_id,
                 retrieval_count=result.entry.retrieval_count,
                 last_accessed=result.entry.last_accessed
             )
-            
+
         trace = MemoryTrace(
             trace_id=str(uuid.uuid4()),
             query=query,
@@ -89,11 +89,11 @@ class MemoryLifecycleManager:
             timestamp=time.time()
         )
         self._traces.append(trace)
-        
+
         # In case we have an AdaptivePlanner that records traces
         if hasattr(self.planner, 'record_trace'):
             self.planner.record_trace(trace)
-            
+
         return results
 
     def record_outcome(self, trace_id: str, outcome: str, task_success_delta: float = 0.0) -> None:
@@ -101,10 +101,10 @@ class MemoryLifecycleManager:
         trace = self.explain(trace_id)
         if not trace:
             return
-            
+
         trace.outcome = outcome
         trace.task_success_delta = task_success_delta
-        
+
         for result in trace.retrieved:
             entry = result.entry
             if outcome == 'success':
@@ -113,7 +113,7 @@ class MemoryLifecycleManager:
                 self.scorer.on_used(entry, positive=False)
             elif outcome == 'ignored':
                 self.scorer.on_ignored(entry)
-                
+
             self.backend.update(
                 entry.entry_id,
                 used_count=entry.used_count,
@@ -122,7 +122,7 @@ class MemoryLifecycleManager:
                 negative_outcomes=entry.negative_outcomes,
                 utility_score=entry.utility_score
             )
-            
+
         if hasattr(self.planner, 'record_trace'):
             self.planner.record_trace(trace)
 
@@ -130,14 +130,14 @@ class MemoryLifecycleManager:
         """Evaluate all memories and promote/decay them based on utility."""
         counts = {'promoted': 0, 'decayed': 0, 'archived': 0, 'unchanged': 0}
         entries = self.backend.get_all()
-        
+
         for entry in entries:
             current_state = entry.state
             recommended_state = self.scorer.get_promotion_recommendation(entry)
-            
+
             if recommended_state != current_state:
                 self.backend.update(entry.entry_id, state=recommended_state)
-                
+
                 if recommended_state == MemoryState.ARCHIVED.value:
                     counts['archived'] += 1
                 elif recommended_state == MemoryState.VERIFIED.value or (current_state == MemoryState.CANDIDATE.value and recommended_state == MemoryState.ACTIVE.value):
@@ -146,7 +146,7 @@ class MemoryLifecycleManager:
                     counts['decayed'] += 1
             else:
                 counts['unchanged'] += 1
-                
+
         return counts
 
     def explain(self, trace_id: str) -> Optional[MemoryTrace]:
@@ -160,21 +160,21 @@ class MemoryLifecycleManager:
         """Get aggregate statistics on memory health."""
         entries = self.backend.get_all()
         total_memories = len(entries)
-        
+
         state_distribution = {}
         type_distribution = {}
         total_utility = 0.0
         negative_transfer_count = 0
-        
+
         for entry in entries:
             state_distribution[entry.state] = state_distribution.get(entry.state, 0) + 1
             type_distribution[entry.memory_type] = type_distribution.get(entry.memory_type, 0) + 1
             total_utility += entry.utility_score
             if self.scorer.detect_negative_transfer(entry):
                 negative_transfer_count += 1
-                
+
         avg_utility = total_utility / total_memories if total_memories > 0 else 0.0
-        
+
         return {
             'total_memories': total_memories,
             'state_distribution': state_distribution,
@@ -184,10 +184,10 @@ class MemoryLifecycleManager:
             'total_traces': len(self._traces),
             'recent_traces': [
                 {
-                    'trace_id': t.trace_id, 
-                    'query': t.query, 
+                    'trace_id': t.trace_id,
+                    'query': t.query,
                     'outcome': t.outcome
-                } 
+                }
                 for t in self._traces[-10:]
             ]
         }
@@ -213,12 +213,12 @@ class MemoryLifecycleManager:
     def search(self, query: str, top_k: int = 5, **kwargs) -> List[SearchResult]:
         """Backward compatibility alias for search_direct."""
         return self.search_direct(query, top_k=top_k, **kwargs)
-        
+
     @property
     def memory(self) -> MemoryBackend:
         """Access the underlying memory backend (backward compatibility)."""
         return self.backend
-        
+
     @property
     def traces(self) -> List[MemoryTrace]:
         """Access the memory traces."""

@@ -15,6 +15,9 @@ import json
 import threading
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Callable, Optional
+import logging
+logger = logging.getLogger("cognicore.nexus.live_instrument")
+
 
 
 @dataclass
@@ -78,7 +81,7 @@ class FullInstrumentor:
             from cognicore.immune.shield import NexusShield
             self.shield = NexusShield()
         except Exception as e:
-            print(f"  [INIT] Immune system: {e}")
+            logger.info(f"  [INIT] Immune system: {e}")
 
         # Brancher
         self.brancher = None
@@ -86,7 +89,7 @@ class FullInstrumentor:
             from cognicore.replay.brancher import TaskBrancher
             self.brancher = TaskBrancher(store=self.store)
         except Exception as e:
-            print(f"  [INIT] Brancher: {e}")
+            logger.info(f"  [INIT] Brancher: {e}")
 
         # Memory middleware
         self.memory = None
@@ -94,7 +97,7 @@ class FullInstrumentor:
             from cognicore.middleware.memory import Memory
             self.memory = Memory()
         except Exception as e:
-            print(f"  [INIT] Memory: {e}")
+            logger.info(f"  [INIT] Memory: {e}")
 
         # Persistent cognition
         self.persistent_store = None
@@ -102,7 +105,7 @@ class FullInstrumentor:
             from cognicore.research.persistent_store import PersistentCognitionStore
             self.persistent_store = PersistentCognitionStore()
         except Exception as e:
-            print(f"  [INIT] PersistentStore: {e}")
+            logger.info(f"  [INIT] PersistentStore: {e}")
 
         # Safety monitor
         self.safety = None
@@ -110,7 +113,7 @@ class FullInstrumentor:
             from cognicore.middleware.safety_monitor import SafetyMonitor
             self.safety = SafetyMonitor()
         except Exception as e:
-            print(f"  [INIT] SafetyMonitor: {e}")
+            logger.info(f"  [INIT] SafetyMonitor: {e}")
 
         # Reflection engine
         self.reflection = None
@@ -122,7 +125,7 @@ class FullInstrumentor:
                 from cognicore.middleware.memory import Memory
                 self.reflection = ReflectionEngine(memory=Memory())
         except Exception as e:
-            print(f"  [INIT] ReflectionEngine: {e}")
+            logger.info(f"  [INIT] ReflectionEngine: {e}")
 
         # Callbacks
         self._callbacks = []

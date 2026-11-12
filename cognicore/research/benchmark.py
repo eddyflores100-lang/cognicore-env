@@ -22,6 +22,9 @@ from cognicore.research.patch_intelligence import (
 )
 from cognicore.research.experiment import ExperimentConfig, ExperimentResult, ExperimentTracker
 from cognicore.research.llm_client import LLMClient
+import logging
+logger = logging.getLogger("cognicore.research.benchmark")
+
 
 # ══════════════════════════════════════════════════════════
 # LOGGING
@@ -32,10 +35,10 @@ def clog(tag, msg, detail=""):
          "ADAPTIVE SUCCESS":"\033[32m", "FAILED PATCH":"\033[31m",
          "REPEATED REASONING":"\033[91m", "PROMPT MUTATION":"\033[36m",
          "LLM":"\033[94m", "INFO":"\033[37m", "AST SIMILARITY":"\033[33m"}
-    print(f"  {C.get(tag, chr(27)+'[0m')}[{tag}]\033[0m {msg}")
+    logger.info(f"  {C.get(tag, chr(27)+'[0m')}[{tag}]\033[0m {msg}")
     if detail:
         for l in detail.strip().split("\n")[:4]:
-            print(f"         {l}")
+            logger.info(f"         {l}")
 
 def sandbox(code, tests):
     try:
@@ -98,7 +101,7 @@ BUGS = [
   {"id":"B05","cat":"resource_leak","title":"Config parser crashes on comments",
    "buggy":"def parse_config(path):\n    f = open(path)\n    lines = f.readlines()\n    config = {}\n    for line in lines:\n        k, v = line.strip().split('=')\n        config[k] = v\n    f.close()\n    return config",
    "test":"import tempfile,os\nt=tempfile.NamedTemporaryFile(mode='w',suffix='.cfg',delete=False)\nt.write('host=localhost\\nport=8080\\n# comment\\n\\ndb=postgres\\n')\nt.close()\nr=parse_config(t.name)\nos.unlink(t.name)\nassert r['host']=='localhost'\nassert r['port']=='8080'\nassert r['db']=='postgres'",
-   "fixes":{"rewrite":lambda c:"def parse_config(path):\n  config={}\n  with open(path) as f:\n    for line in f:\n      line=line.strip()\n      if not line or line.startswith('#'): continue\n      if '=' in line:\n        k,v=line.split('=',1)\n        config[k.strip()]=v.strip()\n  return config\n"}},
+   "fixes":{"rewrite":lambda c:"def parse_config(path):\n  config={}\n  with open(path, encoding="utf-8") as f:\n    for line in f:\n      line=line.strip()\n      if not line or line.startswith('#'): continue\n      if '=' in line:\n        k,v=line.split('=',1)\n        config[k.strip()]=v.strip()\n  return config\n"}},
 
   {"id":"B06","cat":"off_by_one","title":"Pagination drops last page",
    "buggy":"def paginate(items, page_size):\n    total_pages = len(items) // page_size\n    pages = []\n    for i in range(total_pages):\n        pages.append(items[i*page_size:(i+1)*page_size])\n    return pages",
@@ -222,18 +225,18 @@ def run_benchmark(config: ExperimentConfig, llm: LLMClient = None):
     ), name="research-bench")
 
     config.print_config()
-    print(f"\n{'='*64}")
-    print(f"  CogniCore Research Benchmark")
-    print(f"  Model: {config.model} | Bugs: {len(BUGS)} | Max: {config.max_attempts}")
-    print(f"{'='*64}")
+    logger.info(f"\n{'='*64}")
+    logger.info(f"  CogniCore Research Benchmark")
+    logger.info(f"  Model: {config.model} | Bugs: {len(BUGS)} | Max: {config.max_attempts}")
+    logger.info(f"{'='*64}")
 
     for bug in BUGS:
-        print(f"\n  {'─'*56}")
-        print(f"  {bug['id']}: {bug['title']} [{bug['cat']}]")
+        logger.info(f"\n  {'─'*56}")
+        logger.info(f"  {bug['id']}: {bug['title']} [{bug['cat']}]")
         result = ExperimentResult(bug_id=bug["id"], category=bug["cat"], title=bug["title"])
 
         # ── BASELINE ──
-        print(f"  [A] BASELINE")
+        logger.info(f"  [A] BASELINE")
         b_strat = RepairStrategy()
         b_failed, b_hashes = [], set()
         for att in range(1, config.max_attempts+1):
@@ -256,7 +259,7 @@ def run_benchmark(config: ExperimentConfig, llm: LLMClient = None):
         result.baseline_unique_patches = len(b_hashes)
 
         # ── COGNICORE ──
-        print(f"  [B] COGNICORE")
+        logger.info(f"  [B] COGNICORE")
         c_strat = RepairStrategy()
         c_failed, c_hashes, c_errors = [], set(), []
 
@@ -360,7 +363,7 @@ def run_benchmark(config: ExperimentConfig, llm: LLMClient = None):
     # Report
     tracker.print_report()
     report_path = tracker.save(patches)
-    print(f"\n  Experiment saved: {report_path}")
+    logger.info(f"\n  Experiment saved: {report_path}")
     return tracker
 
 
@@ -379,12 +382,12 @@ if __name__ == "__main__":
     )
     llm = LLMClient(provider=args.provider)
     if llm.available:
-        print(f"  LLM: {llm}")
+        logger.info(f"  LLM: {llm}")
         if not llm.test_connection():
-            print(f"  LLM connection test failed, using rule-based agent")
+            logger.info(f"  LLM connection test failed, using rule-based agent")
             llm.available = False
     else:
-        print(f"  No LLM available. Using rule-based agent.")
-        print(f"  Set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY to enable LLM.")
+        logger.info(f"  No LLM available. Using rule-based agent.")
+        logger.info(f"  Set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY to enable LLM.")
 
     run_benchmark(config, llm)

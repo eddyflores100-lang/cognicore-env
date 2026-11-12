@@ -254,7 +254,7 @@ class SQLiteMemoryBackend(MemoryBackend):
             ))
             entry_id = str(cursor.lastrowid)
             entry.entry_id = entry_id
-            
+
             event_bus.publish("on_store", entry=entry, entry_id=entry_id)
             return entry_id
 
@@ -264,7 +264,7 @@ class SQLiteMemoryBackend(MemoryBackend):
                scope_id: Optional[str] = None,
                question_timestamp: Optional[float] = None,
                metadata_filters: Optional[Dict[str, str]] = None) -> List[SearchResult]:
-        
+
         # If we have an embedding provider, we use it for semantic search + BM25 score
         query_vec = None
         if self.provider and query.strip():
@@ -335,11 +335,11 @@ class SQLiteMemoryBackend(MemoryBackend):
                                 if norm > 0:
                                     vec = [x/norm for x in vec]
                                 sim_score = sum(a*b for a, b in zip(query_vec, vec))
-                                conn.execute("UPDATE memory_entries SET embedding_json = ? WHERE entry_id = ?", 
+                                conn.execute("UPDATE memory_entries SET embedding_json = ? WHERE entry_id = ?",
                                              (json.dumps(vec), row["entry_id"]))
                         except Exception:
                             pass
-                    
+
                     sim_score = max(0.0, sim_score)
                     norm_bm25 = bm25_map.get(entry.entry_id, 0.0) / max_bm25
                     final_score = 0.7 * sim_score + 0.3 * norm_bm25
@@ -357,7 +357,7 @@ class SQLiteMemoryBackend(MemoryBackend):
             if query.strip():
                 clean_query = query.replace('"', '').replace("'", '').strip()
                 fts_tokens = ' '.join(f'{w}*' for w in clean_query.split() if w)
-                
+
                 fts_sql = """
                     SELECT rowid, rank as bm25_score
                     FROM memory_fts
@@ -370,7 +370,7 @@ class SQLiteMemoryBackend(MemoryBackend):
                     WHERE 1=1
                 """  # nosec B608
                 params = [fts_tokens]
-            
+
                 if category:
                     sql += " AND m.category = ?"
                     params.append(category)
@@ -414,7 +414,7 @@ class SQLiteMemoryBackend(MemoryBackend):
                 sql += " ORDER BY timestamp DESC LIMIT 1000"
                 cursor = conn.execute(sql, params)
                 rows = cursor.fetchall()
-            
+
             results = []
             for row in rows:
                 if metadata_filters:
@@ -424,11 +424,11 @@ class SQLiteMemoryBackend(MemoryBackend):
                             continue
                     except Exception:
                         continue
-                        
+
                 entry = self._row_to_entry(row)
                 bm25_score = -row["bm25_score"]
                 results.append(SearchResult(entry=entry, score=bm25_score, source="sqlite"))
-            
+
             results.sort(key=lambda x: x.score, reverse=True)
             final_results = results[:top_k]
             event_bus.publish("on_search", query=query, top_k=top_k, results=final_results)
@@ -452,7 +452,7 @@ class SQLiteMemoryBackend(MemoryBackend):
                      scope_id: Optional[str],
                      metadata_filters: Optional[Dict[str, str]] = None) -> List[SearchResult]:
         """BM25 Okapi ranking over a list of sqlite3.Row objects.
-        
+
         This gives proper term-importance scoring so natural-language queries
         like "who built CogniCore" correctly rank memories mentioning
         "built" and "CogniCore" even when stop-words differ.
@@ -489,7 +489,7 @@ class SQLiteMemoryBackend(MemoryBackend):
                 continue
             if scope_id and (row["scope_id"] or "") != scope_id:
                 continue
-                
+
             if metadata_filters:
                 try:
                     meta = json.loads(row["metadata_json"]) if row["metadata_json"] else {}
@@ -550,7 +550,7 @@ class SQLiteMemoryBackend(MemoryBackend):
             like_params.append(scope_id)
         like_sql += " ORDER BY timestamp DESC LIMIT 1000"
         like_rows = conn.execute(like_sql, like_params).fetchall()  # nosec B608
-        
+
         if metadata_filters:
             filtered_like_rows = []
             for row in like_rows:
@@ -574,7 +574,7 @@ class SQLiteMemoryBackend(MemoryBackend):
         if success_filter is not None:
             sql += " AND correct = ?"
             params.append(1 if success_filter else 0)
-        
+
         sql += " ORDER BY entry_id DESC LIMIT ?"
         params.append(top_k)
 

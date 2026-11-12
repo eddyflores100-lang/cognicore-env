@@ -4,6 +4,9 @@ Assign to "Nexus" or label with "nexus" to auto-trigger.
 """
 import os, json
 from cognicore.integrations.task_queue import NexusTask, TaskSource
+import logging
+logger = logging.getLogger("cognicore.integrations.linear")
+
 
 try:
     import httpx
@@ -48,7 +51,7 @@ class LinearIntegration:
         # Map status names to Linear state IDs (would need actual team config)
         mutation = """mutation { issueUpdate(id: "%s", input: { stateId: "%s" }) { success } }"""
         # In production, resolve stateId from status_name via API
-        print(f"  [Linear] Status update: {issue_id} -> {status_name}")
+        logger.info(f"  [Linear] Status update: {issue_id} -> {status_name}")
 
     def post_comment(self, issue_id: str, body: str):
         if not self.available:
@@ -61,7 +64,7 @@ class LinearIntegration:
                 "variables": {"id": issue_id, "body": body}},
                 headers={"Authorization": self.api_key, "Content-Type": "application/json"})
         except Exception as e:
-            print(f"  [Linear] Comment failed: {e}")
+            logger.info(f"  [Linear] Comment failed: {e}")
 
     def on_task_completed(self, task: NexusTask):
         meta = task.metadata

@@ -151,7 +151,7 @@ class CogniCoreRememberTool(BaseTool):
             return "Error: 'text' parameter is required."
 
         runtime = _get_runtime()
-        
+
         # Store in unified memory (for reflection and recall)
         runtime.memory.store(MemoryEntry(
             text=text,

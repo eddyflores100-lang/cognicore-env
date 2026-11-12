@@ -4,6 +4,9 @@ Diverse model chain: Google, DeepSeek, Qwen, Gemma, Arcee.
 """
 import http.client
 import os, json, time, random
+import logging
+logger = logging.getLogger("cognicore.nexus.multi_llm")
+
 
 _NO_RETRY = ["api key expired","api key not valid","invalid_argument",
              "permission_denied","api_key_invalid","exceeded your current quota"]
@@ -39,7 +42,7 @@ class MultiLLM:
             except Exception as e:
                 es = str(e)
                 errors.append("{}: {}".format(model, es[:100]))
-                print("  [LLM] {} failed: {}".format(model, es[:80]))
+                logger.info("  [LLM] {} failed: {}".format(model, es[:80]))
                 if any(m in es.lower() for m in _NO_RETRY):
                     self._failed.add(model)
         raise RuntimeError("All models failed:\n" + "\n".join("  - " + e for e in errors))
@@ -62,7 +65,7 @@ class MultiLLM:
                         raise RuntimeError("Auth/quota ({}): {}".format(status, eb[:150]))
                     if status in (429,502,503) and attempt < max_retries:
                         w = initial_wait*(2**attempt)+random.uniform(1,5)
-                        print("  [LLM] {} rate limited ({}). Retry {}/{} in {}s...".format(model,status,attempt+1,max_retries,int(w)))
+                        logger.info("  [LLM] {} rate limited ({}). Retry {}/{} in {}s...".format(model,status,attempt+1,max_retries,int(w)))
                         time.sleep(w); continue
                     raise RuntimeError("API error {}: {}".format(status, eb[:150]))
                 data = json.loads(raw)
@@ -74,7 +77,7 @@ class MultiLLM:
                 am = data.get("model", model)
                 self.total_tokens_in += ti; self.total_tokens_out += to; self.total_calls += 1
                 self._last_call = {"tokens_in":ti,"tokens_out":to,"latency_ms":lat,"model":am,"requested_model":model}
-                print("  [LLM] OK {} -- {}->{}t, {}ms".format(am, ti, to, lat))
+                logger.info("  [LLM] OK {} -- {}->{}t, {}ms".format(am, ti, to, lat))
                 return text
             except Exception as e:
                 if attempt < max_retries: time.sleep(3+random.uniform(1,3)); continue

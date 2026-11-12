@@ -6,6 +6,9 @@ executable buggy code + failing tests.
 import json, os
 from dataclasses import dataclass
 from typing import List, Dict, Optional
+import logging
+logger = logging.getLogger("cognicore.research.swebench")
+
 
 @dataclass
 class SWEBenchTask:
@@ -186,4 +189,4 @@ def load_from_huggingface(limit=10):
                  "buggy_code":"","test_code":it.get("test_patch",""),
                  "fix_hint":it.get("hints_text","")[:200]} for it in ds.select(range(min(limit,len(ds))))]
     except Exception as e:
-        print(f"  HuggingFace load failed: {e}"); return []
+        logger.info(f"  HuggingFace load failed: {e}"); return []

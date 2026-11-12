@@ -273,7 +273,7 @@ class ExperienceManager:
             new_entry = exp.to_memory_entry()
             new_entry.creation_reason = "transferred"
             new_id = target_backend.store(new_entry)
-            
+
             # Update the experience object with its new ID in the target backend
             exp.experience_id = str(new_id)
             transferred.append(exp)

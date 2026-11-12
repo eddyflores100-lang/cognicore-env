@@ -162,7 +162,7 @@ class TrajectoryStore:
         with connect_sqlite(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute("SELECT * FROM trajectories ORDER BY timestamp").fetchall()
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding="utf-8") as f:
             for r in rows:
                 d = dict(r)
                 d['steps'] = json.loads(d.pop('steps_json', '[]'))

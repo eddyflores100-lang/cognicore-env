@@ -21,20 +21,20 @@ class RateLimitedMemoryBackend(MemoryBackend):
         self.backend = backend
         self.max_calls = max_calls
         self.window_seconds = window_seconds
-        
+
         self._call_timestamps: deque = deque()
 
     def _check_rate_limit(self) -> None:
         now = time.time()
-        
+
         # Remove timestamps outside the window
         while self._call_timestamps and now - self._call_timestamps[0] > self.window_seconds:
             self._call_timestamps.popleft()
-            
+
         if len(self._call_timestamps) >= self.max_calls:
             logger.warning("Memory rate limit exceeded.")
             raise RateLimitExceeded(f"Rate limit of {self.max_calls} calls per {self.window_seconds}s exceeded.")
-            
+
         self._call_timestamps.append(now)
 
     def store(self, entry: MemoryEntry) -> str:

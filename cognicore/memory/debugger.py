@@ -2,7 +2,7 @@ import json
 from typing import Dict, List, Optional, Any
 
 from cognicore.memory.base import (
-    MemoryEntry, MemoryState, MemoryType, MemoryBackend, 
+    MemoryEntry, MemoryState, MemoryType, MemoryBackend,
     SearchResult, MemoryTrace
 )
 from cognicore.memory.utility import UtilityScorer
@@ -10,7 +10,7 @@ from cognicore.memory.utility import UtilityScorer
 
 class MemoryDebugger:
     """Developer tooling for inspecting and understanding memory behavior."""
-    
+
     def __init__(self, backend: MemoryBackend, scorer: Optional[UtilityScorer] = None, traces: Optional[List[MemoryTrace]] = None):
         self.backend = backend
         self.scorer = scorer or UtilityScorer()
@@ -28,15 +28,15 @@ class MemoryDebugger:
                 'memory_type': entry.memory_type,
                 'utility_score': entry.utility_score
             })
-            
+
         reasoning = f"Planner decided to retrieve. Budget was {trace.plan.budget if trace.plan else 'unknown'}."
         if trace.plan and trace.plan.reasoning:
             reasoning = trace.plan.reasoning
-            
+
         retrieval_improved = None
         if trace.outcome:
             retrieval_improved = (trace.outcome == 'success')
-            
+
         plan_dict = {}
         if trace.plan:
             plan_dict = {
@@ -45,7 +45,7 @@ class MemoryDebugger:
                 'memory_types': trace.plan.memory_types,
                 'priority_order': trace.plan.priority_order
             }
-            
+
         return {
             'query': trace.query,
             'plan': plan_dict,
@@ -73,7 +73,7 @@ class MemoryDebugger:
         """Analyze utility scores across all memories."""
         entries = self.backend.get_all()
         total_entries = len(entries)
-        
+
         if total_entries == 0:
             return {
                 'total_entries': 0,
@@ -84,31 +84,31 @@ class MemoryDebugger:
                 'top_useful': [],
                 'least_useful': []
             }
-            
+
         total_utility = 0.0
         positive = 0
         negative = 0
         zero = 0
-        
+
         for entry in entries:
             u = entry.utility_score
             total_utility += u
             if u > 0: positive += 1
             elif u < 0: negative += 1
             else: zero += 1
-            
+
         sorted_entries = sorted(entries, key=lambda e: e.utility_score, reverse=True)
-        
+
         def format_entry(e):
             return {
                 'text': e.text,
                 'utility_score': e.utility_score,
                 'retrieval_count': e.retrieval_count
             }
-            
+
         top_useful = [format_entry(e) for e in sorted_entries[:10]]
         least_useful = [format_entry(e) for e in sorted_entries[-10:] if e.utility_score < 0]
-        
+
         return {
             'total_entries': total_entries,
             'mean_utility': total_utility / total_entries,
@@ -123,7 +123,7 @@ class MemoryDebugger:
         """Find memories that are actively harming performance."""
         entries = self.backend.get_all()
         negatives = []
-        
+
         for entry in entries:
             if self.scorer.detect_negative_transfer(entry):
                 negatives.append({
@@ -133,14 +133,14 @@ class MemoryDebugger:
                     'negative_outcomes': entry.negative_outcomes,
                     'state': entry.state
                 })
-                
+
         return negatives
 
     def get_memory_timeline(self, limit: int = 100) -> List[Dict[str, Any]]:
         """Get chronological view of memory creation."""
         entries = self.backend.get_all()
         sorted_entries = sorted(entries, key=lambda e: e.timestamp, reverse=True)[:limit]
-        
+
         return [{
             'entry_id': e.entry_id,
             'text': e.text,
@@ -175,6 +175,6 @@ class MemoryDebugger:
             'negative_transfers': self.get_negative_transfers(),
             'recent_history': self.get_trace_history(limit=20)
         }
-        
+
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(report, f, indent=2)

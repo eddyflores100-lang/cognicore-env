@@ -110,7 +110,7 @@ REAL_CODE_CASES: List[Dict[str, Any]] = [
     {
         "code": "def read_config(path):\n    f = open(path)\n    data = json.load(f)\n    return data",
         "bug_type": "resource_leak",
-        "fix": "def read_config(path):\n    with open(path) as f:\n        data = json.load(f)\n    return data",
+        "fix": "def read_config(path):\n    with open(path, encoding="utf-8") as f:\n        data = json.load(f)\n    return data",
         "explanation": "File handle is never closed. If json.load raises, the file leaks. Use `with` statement.",
         "language": "python",
     },

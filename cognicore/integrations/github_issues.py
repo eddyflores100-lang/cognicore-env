@@ -5,6 +5,9 @@ Labels issue with 'nexus' -> NEXUS fixes -> opens PR -> comments result.
 import os, json
 from datetime import datetime
 from cognicore.integrations.task_queue import NexusTask, TaskSource
+import logging
+logger = logging.getLogger("cognicore.integrations.github_issues")
+
 
 try:
     from github import Github, GithubException
@@ -116,7 +119,7 @@ class GitHubIssuesTrigger:
                 issue.add_to_labels(self.label_failed)
 
         except Exception as e:
-            print(f"  [GitHub] Error posting result: {e}")
+            logger.info(f"  [GitHub] Error posting result: {e}")
 
     def _open_pr(self, repo, issue, result):
         """Open a PR with the fix."""
@@ -141,7 +144,7 @@ class GitHubIssuesTrigger:
                 head=branch_name, base=base)
             return pr.html_url
         except Exception as e:
-            print(f"  [GitHub] PR creation failed: {e}")
+            logger.info(f"  [GitHub] PR creation failed: {e}")
             return None
 
     def list_nexus_issues(self, repo_name: str) -> list:

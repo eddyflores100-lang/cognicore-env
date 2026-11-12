@@ -34,17 +34,17 @@ def handle_auth_error(e: AuthError) -> CallToolResult:
 def validate_token(token: str, supabase_url: str, jwks_client=None) -> str:
     if not token:
         raise AuthError("missing authorization header")
-    
+
     parts = token.strip().split()
     if len(parts) != 2 or parts[0].lower() != "bearer":
         raise AuthError("malformed authorization header")
-        
+
     token_str = parts[1]
-    
+
     try:
         client = jwks_client or get_jwks_client(supabase_url)
         signing_key = client.get_signing_key_from_jwt(token_str)
-        
+
         issuer = f"{supabase_url.rstrip('/')}/auth/v1"
         payload = jwt.decode(
             token_str,
@@ -53,14 +53,14 @@ def validate_token(token: str, supabase_url: str, jwks_client=None) -> str:
             issuer=issuer,
             audience="authenticated"
         )
-        
+
         sub = payload.get("sub")
         if not sub:
             raise AuthError("missing sub claim")
-            
+
         val = uuid.UUID(sub)
         return str(val)
-        
+
     except AuthError:
         raise
     except jwt.ExpiredSignatureError:
@@ -86,13 +86,13 @@ def require_auth(ctx) -> str:
     if not supabase_url:
         logger.error("SUPABASE_URL environment variable is missing")
         raise AuthError("server configuration error", "server_error")
-        
+
     req = getattr(ctx, "request_context", None)
     if not req:
         raise AuthError("missing request context")
-        
+
     auth_header = None
-    
+
     if hasattr(req, "headers"):
         auth_header = req.headers.get("Authorization")
     elif isinstance(req, dict):
@@ -101,8 +101,8 @@ def require_auth(ctx) -> str:
         meta = req.meta
         meta_dict = meta if isinstance(meta, dict) else (vars(meta) if hasattr(meta, "__dict__") else {})
         auth_header = meta_dict.get("Authorization") or meta_dict.get("authorization")
-        
+
     if not auth_header:
         raise AuthError("missing authorization header")
-        
+
     return validate_token(auth_header, supabase_url)
