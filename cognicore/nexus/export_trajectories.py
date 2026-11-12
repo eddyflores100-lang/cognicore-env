@@ -16,7 +16,7 @@ for p, d in cp.items():
     s = d["solved"]
     r = d["mean_reward"]
     t = d["avg_tokens"]
-    print("  %-15s n=%3d solved=%3d reward=%+.3f avg_tok=%8.0f" % (p, n, s, r, t))
+    logger.info("  %-15s n=%3d solved=%3d reward=%+.3f avg_tok=%8.0f" % (p, n, s, r, t))
 
 path = ts.export_for_training()
 print("\nExported to:", path)
@@ -24,6 +24,9 @@ lines = open(path).readlines()
 print("JSONL lines:", len(lines))
 print("\nSample trajectory (first line):")
 import json
+import logging
+logger = logging.getLogger("cognicore.nexus.export_trajectories")
+
 first = json.loads(lines[0])
 print("  task:", first["task_id"])
 print("  policy:", first["policy"])

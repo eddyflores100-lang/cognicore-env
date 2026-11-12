@@ -381,13 +381,13 @@ class StructuredExperience:
                         reason=metadata.get("reason", "")
                     )
                 )
-            
+
             env_data = metadata.get("environment")
             env = EnvironmentContext.from_dict(env_data) if env_data else EnvironmentContext()
-            
+
             repo_data = metadata.get("repository")
             repo = RepositoryContext.from_dict(repo_data) if repo_data else RepositoryContext()
-                
+
             return cls(
                 experience_id=str(entry.entry_id),
                 task=entry.source_task or entry.category or "",

@@ -423,11 +423,11 @@ class Arena:
     def print_leaderboard(self):
         """Print ELO leaderboard."""
         print()
-        print("  " + "=" * 60)
-        print("  ARENA LEADERBOARD")
-        print("  " + "=" * 60)
-        print(f"  {'Rank':<6}{'Agent':<20}{'ELO':>8}{'W':>5}{'L':>5}{'D':>5}")
-        print(f"  {'-'*6}{'-'*20}{'-'*8}{'-'*5}{'-'*5}{'-'*5}")
+        logger.info("  " + "=" * 60)
+        logger.info("  ARENA LEADERBOARD")
+        logger.info("  " + "=" * 60)
+        logger.info(f"  {'Rank':<6}{'Agent':<20}{'ELO':>8}{'W':>5}{'L':>5}{'D':>5}")
+        logger.info(f"  {'-'*6}{'-'*20}{'-'*8}{'-'*5}{'-'*5}{'-'*5}")
 
         ranked = sorted(self.elo.items(), key=lambda x: -x[1])
         for rank, (name, elo) in enumerate(ranked, 1):
@@ -435,6 +435,6 @@ class Arena:
             l = self.losses[name]
             d = self.draws[name]
             medal = {1: "[1st]", 2: "[2nd]", 3: "[3rd]"}.get(rank, f" {rank}.  ")
-            print(f"  {medal:<6}{name:<20}{elo:>7.0f} {w:>4} {l:>4} {d:>4}")
+            logger.info(f"  {medal:<6}{name:<20}{elo:>7.0f} {w:>4} {l:>4} {d:>4}")
 
-        print("  " + "=" * 60)
+        logger.info("  " + "=" * 60)

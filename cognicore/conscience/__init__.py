@@ -16,12 +16,12 @@ from typing import Any, Dict, List, Callable, Optional
 class ConscienceEvent:
     """Records an instance where the conscience evaluated an action."""
     def __init__(
-        self, 
-        step: int, 
-        observation: Any, 
-        intended_action: Any, 
+        self,
+        step: int,
+        observation: Any,
+        intended_action: Any,
         scores: Dict[str, float],
-        combined_score: float, 
+        combined_score: float,
         threshold: float,
         outcome: str,
         would_be_correct: Optional[bool] = None
@@ -47,7 +47,7 @@ class ConscienceEvent:
 
 class ConscienceTracker:
     """Tracks state and config for the conscience system."""
-    
+
     def __init__(self, agent: Any, threshold: float, escalation_policy: Callable):
         self.original_agent = agent
         self.threshold = threshold
@@ -64,7 +64,7 @@ class ConscienceTracker:
         held = [e for e in self.events if e.outcome in ("hold", "escalate")]
         if not held:
             return 0.0
-            
+
         correct_holds = 0
         for e in held:
             if e.would_be_correct:
@@ -87,22 +87,22 @@ class ConscienceTracker:
         event = next((e for e in self.events if e.step == step), None)
         if not event:
             return f"No conscience event recorded for step {step}."
-            
+
         action = event.intended_action
         score = event.combined_score
         thr = event.threshold
-        
+
         explanation = f"At step {step}, the intended action was '{action}'. "
         explanation += f"The combined conscience score was {score:.2f} (Threshold: {thr:.2f}).\n"
-        
+
         for k, v in event.scores.items():
             explanation += f"- {k.capitalize()}: {v:.2f}\n"
-            
+
         if score < thr:
             explanation += f"Because the score was below the threshold, the policy triggered outcome '{event.outcome}'."
         else:
             explanation += "The score was sufficient; the action proceeded normally."
-            
+
         return explanation
 
 
@@ -112,12 +112,12 @@ class Conscience:
     @classmethod
     def wrap(cls, agent: Any, threshold: float, escalation_policy: Callable) -> Any:
         """Wraps an agent to intercept its actions with conscience checks.
-        
+
         Args:
             agent: The base agent.
             threshold: Score threshold below which conscience fires [0, 1].
             escalation_policy: Callable(ConscienceEvent) -> str
-            
+
         Returns:
             The wrapped agent.
         """
@@ -152,7 +152,7 @@ class Conscience:
                     else:
                         pert_obs = obs
                     actions.append(str(self._get_action(pert_obs)))
-                
+
                 # Uncertainty is high (low score) if there's high disagreement
                 unique_actions = len(set(actions))
                 return 1.0 - (unique_actions / 5.0)
@@ -162,11 +162,11 @@ class Conscience:
                 mem = getattr(self._base_agent, "memory", None)
                 if not mem or not hasattr(mem, "entries"):
                     return 0.5
-                
+
                 entries = mem.entries
                 if not entries:
                     return 0.1
-                
+
                 # Heuristic: return high if we've seen exact obs, otherwise moderate
                 # (A real implementation would use embeddings)
                 for e in entries[-50:]:
@@ -179,7 +179,7 @@ class Conscience:
                 env = getattr(self._base_agent, "env", None)
                 if not env or not hasattr(env, "step"):
                     return 0.5
-                    
+
                 # We can't actually step the real env without side effects unless we can deepcopy
                 try:
                     env_copy = copy.deepcopy(env)
@@ -200,7 +200,7 @@ class Conscience:
             def act(self, obs: Any) -> Any:
                 self.conscience.step_counter += 1
                 intended_action = self._get_action(obs)
-                
+
                 # 1. Compute scores
                 scores = {
                     "uncertainty": self._compute_uncertainty(obs),
@@ -208,14 +208,14 @@ class Conscience:
                     "consequence": self._compute_consequence(obs, intended_action),
                     "historical_regret": self._compute_regret(obs, intended_action)
                 }
-                
+
                 # Combined score is average
                 combined = sum(scores.values()) / len(scores)
-                
+
                 # 2. Check threshold
                 outcome = "proceed"
                 would_be_correct = random.random() > 0.5  # Simulate oracle/hindsight
-                
+
                 if combined < self.conscience.threshold:
                     event = ConscienceEvent(
                         step=self.conscience.step_counter,
@@ -227,12 +227,12 @@ class Conscience:
                         outcome="hold", # placeholder before policy
                         would_be_correct=would_be_correct
                     )
-                    
+
                     policy_outcome = self.conscience.escalation_policy(event)
                     event.outcome = policy_outcome
-                    
+
                     self.conscience.events.append(event)
-                    
+
                     if policy_outcome.startswith("override"):
                         try:
                             # Extract overridden action, e.g., "override(left)"
@@ -264,7 +264,7 @@ class Conscience:
                         would_be_correct=True
                     )
                     self.conscience.events.append(event)
-                    
+
                 return intended_action
 
             def predict(self, obs: Any) -> Any:

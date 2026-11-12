@@ -37,7 +37,7 @@ class RevalidationResult:
 class RevalidationEngine:
     """
     Engine for checking staleness and re-validating experiences.
-    
+
     Determines if an experience is stale based on age and environment changes.
     Can re-validate stale experiences against new evidence.
     """
@@ -87,10 +87,10 @@ class RevalidationEngine:
             reasons.append(f"Experience is older than {self.max_age_days} days")
 
         comp_result = self.checker.check(experience.environment, current_env)
-        
+
         if not comp_result.compatible:
             reasons.extend(comp_result.blockers)
-            
+
         if comp_result.warnings and age_days > 30.0:
             reasons.append("Environment has minor changes and experience is aging")
 
@@ -133,20 +133,20 @@ class RevalidationEngine:
 
         if staleness.stale and new_evidence:
             verification_result = self.gate.verify(experience, new_evidence)
-            
+
             if verification_result.passed:
                 # Verification passed, update experience and backend
                 experience.environment = current_env
                 experience.verification_status = VerificationStatus.VERIFIED.value
                 experience.verification_evidence = new_evidence
                 experience.content_hash = experience.compute_content_hash()
-                
+
                 backend.update(
                     experience.experience_id,
                     state=MemoryState.VERIFIED.value,
                     metadata={"experience": experience._to_payload_dict(), "content_hash": experience.content_hash}
                 )
-                
+
                 return RevalidationResult(
                     valid=True,
                     new_status=VerificationStatus.VERIFIED.value,
@@ -162,7 +162,7 @@ class RevalidationEngine:
                     invalidated_reason=f"Failed re-validation: {', '.join(verification_result.blockers)}"
                 )
                 experience.verification_status = VerificationStatus.INVALID.value
-                
+
                 return RevalidationResult(
                     valid=False,
                     new_status=VerificationStatus.INVALID.value,

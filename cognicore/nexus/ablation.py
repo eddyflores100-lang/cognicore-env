@@ -7,6 +7,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from cognicore.research.persistent_store import PersistentCognitionStore
 from cognicore.nexus.run import run_nexus
 from cognicore.nexus.trajectory_store import TrajectoryStore
+import logging
+logger = logging.getLogger("cognicore.nexus.ablation")
+
 
 
 def stats(values):
@@ -35,10 +38,10 @@ def run_ablation(seeds=None, verbose=True):
         ("review_first",     "review_first", "Reviewer before test: M->P->C->R->C->T"),
     ]
 
-    print("=" * 70)
-    print("  NEXUS ABLATION STUDY")
-    print(f"  Seeds: {seeds} | Configs: {len(configs)} | Tasks: 20")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("  NEXUS ABLATION STUDY")
+    logger.info(f"  Seeds: {seeds} | Configs: {len(configs)} | Tasks: 20")
+    logger.info("=" * 70)
 
     results = {}
     for name, policy, desc in configs:
@@ -69,26 +72,26 @@ def run_ablation(seeds=None, verbose=True):
         }
 
         if verbose:
-            print(f"\n  [{name}] {desc}")
-            print(f"    Solve: {sr_mean:.1f}/20 +/- {sr_ci:.1f} (95% CI)")
-            print(f"    Tokens: {tk_mean:,.0f} +/- {tk_ci:,.0f}")
-            print(f"    Attempts: {at_mean:.1f} +/- {at_ci:.1f}")
-            print(f"    Cost: ${sum(costs)/len(costs):.4f}")
+            logger.info(f"\n  [{name}] {desc}")
+            logger.info(f"    Solve: {sr_mean:.1f}/20 +/- {sr_ci:.1f} (95% CI)")
+            logger.info(f"    Tokens: {tk_mean:,.0f} +/- {tk_ci:,.0f}")
+            logger.info(f"    Attempts: {at_mean:.1f} +/- {at_ci:.1f}")
+            logger.info(f"    Cost: ${sum(costs)/len(costs):.4f}")
 
     # Summary table
-    print("\n" + "=" * 70)
-    print("  ABLATION RESULTS")
-    print("=" * 70)
-    print(f"  {'Config':<18} {'Solve':>12} {'Tokens':>14} {'Attempts':>12} {'Cost':>10}")
-    print(f"  {'-'*66}")
+    logger.info("\n" + "=" * 70)
+    logger.info("  ABLATION RESULTS")
+    logger.info("=" * 70)
+    logger.info(f"  {'Config':<18} {'Solve':>12} {'Tokens':>14} {'Attempts':>12} {'Cost':>10}")
+    logger.info(f"  {'-'*66}")
     for name, r in results.items():
         sr = f"{r['solve_mean']:.1f}+/-{r['solve_ci']:.1f}"
         tk = f"{r['token_mean']:,.0f}+/-{r['token_ci']:,.0f}"
         at = f"{r['attempt_mean']:.1f}+/-{r['attempt_ci']:.1f}"
-        print(f"  {name:<18} {sr:>12} {tk:>14} {at:>12} ${r['cost_mean']:>8.4f}")
+        logger.info(f"  {name:<18} {sr:>12} {tk:>14} {at:>12} ${r['cost_mean']:>8.4f}")
 
     # Component contribution analysis
-    print("\n  COMPONENT CONTRIBUTIONS:")
+    logger.info("\n  COMPONENT CONTRIBUTIONS:")
     base = results.get("minimal", {})
     for name, r in results.items():
         if name == "minimal":
@@ -96,10 +99,10 @@ def run_ablation(seeds=None, verbose=True):
         ds = r["solve_mean"] - base.get("solve_mean", 0)
         dt = r["token_mean"] - base.get("token_mean", 0)
         da = r["attempt_mean"] - base.get("attempt_mean", 0)
-        print(f"    {name} vs minimal: solve={ds:+.1f} tokens={dt:+,.0f} attempts={da:+.1f}")
+        logger.info(f"    {name} vs minimal: solve={ds:+.1f} tokens={dt:+,.0f} attempts={da:+.1f}")
 
     # Statistical significance
-    print("\n  SIGNIFICANCE TESTS:")
+    logger.info("\n  SIGNIFICANCE TESTS:")
     for name, r in results.items():
         if name == "minimal":
             continue
@@ -107,15 +110,15 @@ def run_ablation(seeds=None, verbose=True):
         b = results["minimal"]
         overlap = (r["solve_mean"] - r["solve_ci"]) <= (b["solve_mean"] + b["solve_ci"])
         sig = "NOT significant" if overlap else "SIGNIFICANT"
-        print(f"    {name} vs minimal: {sig}")
+        logger.info(f"    {name} vs minimal: {sig}")
 
-    print("=" * 70)
+    logger.info("=" * 70)
 
     # Save results
     out_path = os.path.join(os.path.dirname(__file__), '..', '..', 'ablation_results.json')
-    with open(out_path, 'w') as f:
+    with open(out_path, 'w', encoding="utf-8") as f:
         json.dump(results, f, indent=2, default=str)
-    print(f"  Results saved: {out_path}")
+    logger.info(f"  Results saved: {out_path}")
 
     return results
 

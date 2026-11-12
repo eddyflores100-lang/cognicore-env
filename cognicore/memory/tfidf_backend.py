@@ -14,12 +14,12 @@ from .events import event_bus
 class TFIDFMemoryBackend(MemoryBackend):
     """
     Zero-dependency memory backend using TF-IDF similarity.
-    
+
     This is the default backend. It provides semantic search using
     sparse TF-IDF vectors and cosine similarity, as well as exact
     category matching. It implements memory decay (older memories fade)
     and JSON-based persistence.
-    
+
     For production use with better semantic matching, install
     `cognicore[embeddings]` and use `BasicEmbeddingBackend` instead.
     """
@@ -43,12 +43,12 @@ class TFIDFMemoryBackend(MemoryBackend):
         self.decay_rate = decay_rate
         self.similarity_threshold = similarity_threshold
         self.persistence_path = persistence_path
-        
+
         self._step_count = 0
         self._doc_freq: Dict[str, int] = defaultdict(int)
         self._total_docs = 0
         self._lock = threading.RLock()
-        
+
         # Load existing state if available
         if self.persistence_path:
             self.load()
@@ -91,11 +91,11 @@ class TFIDFMemoryBackend(MemoryBackend):
         common = set(vec_a.keys()) & set(vec_b.keys())
         if not common:
             return 0.0
-        
+
         dot_product = sum(vec_a[t] * vec_b[t] for t in common)
         norm_a = math.sqrt(sum(v * v for v in vec_a.values()))
         norm_b = math.sqrt(sum(v * v for v in vec_b.values()))
-        
+
         if norm_a == 0 or norm_b == 0:
             return 0.0
         return dot_product / (norm_a * norm_b)
@@ -109,7 +109,7 @@ class TFIDFMemoryBackend(MemoryBackend):
         """Store an entry, update TF-IDF stats, and apply decay."""
         self._step_count += 1
         entry.metadata["_inserted_at_step"] = self._step_count
-                
+
         # Initialize auto-fields if empty
         if not entry.entry_id:
             entry.entry_id = f"mem_{int(time.time()*1000)}_{self._step_count}"
@@ -117,25 +117,25 @@ class TFIDFMemoryBackend(MemoryBackend):
             entry.timestamp = time.time()
         if not entry.last_accessed:
             entry.last_accessed = entry.timestamp
-            
+
         # Update vocabulary
         combined_text = f"{entry.category} {entry.text}"
         tokens = set(self._tokenize(combined_text))
         for t in tokens:
             self._doc_freq[t] += 1
         self._total_docs += 1
-        
+
         # Store internal vector cache
         entry.metadata["_tfidf_vector"] = self._tfidf_vector(combined_text)
-        
+
         self.entries.append(entry)
-        
+
         # Evict if over size
         if len(self.entries) > self.max_size:
             # Sort by relevance ascending
             self.entries.sort(key=lambda x: x.relevance)
             evicted = self.entries.pop(0)
-            
+
             # Decrement vocab counts
             evicted_text = f"{evicted.category} {evicted.text}"
             evicted_tokens = set(self._tokenize(evicted_text))
@@ -144,7 +144,7 @@ class TFIDFMemoryBackend(MemoryBackend):
                 if self._doc_freq[t] <= 0:
                     del self._doc_freq[t]
             self._total_docs -= 1
-            
+
         self.save()
         event_bus.publish("on_store", entry=entry, entry_id=entry.entry_id)
         return entry.entry_id
@@ -163,7 +163,7 @@ class TFIDFMemoryBackend(MemoryBackend):
         is_empty_query = not query or not query.strip()
         query_vec = self._tfidf_vector(query) if not is_empty_query else {}
         results: List[SearchResult] = []
-        
+
         for entry in self.entries:
             # Skip archived/deleted entries
             if not entry.is_searchable:
@@ -176,7 +176,7 @@ class TFIDFMemoryBackend(MemoryBackend):
             # Filter by category
             if category and entry.category != category:
                 continue
-                
+
             step_diff = self._step_count - entry.metadata.get("_inserted_at_step", self._step_count)
             dynamic_relevance = entry.relevance * (self.decay_rate ** step_diff)
 
@@ -189,17 +189,17 @@ class TFIDFMemoryBackend(MemoryBackend):
                     # Fallback if cached vector is missing
                     entry_vec = self._tfidf_vector(f"{entry.category} {entry.text}")
                     entry.metadata["_tfidf_vector"] = entry_vec
-                    
+
                 raw_sim = self._cosine_similarity(query_vec, entry_vec)
                 if raw_sim >= self.similarity_threshold:
                     # Score combines semantic similarity with relevance (recency)
                     final_score = raw_sim * dynamic_relevance
                     results.append(SearchResult(entry=entry, score=final_score, source="semantic"))
-                
+
         # Sort descending by score
         results.sort(key=lambda x: x.score, reverse=True)
         final_results = results[:top_k]
-        
+
         event_bus.publish("on_search", query=query, top_k=top_k, results=final_results)
         return final_results
 
@@ -216,7 +216,7 @@ class TFIDFMemoryBackend(MemoryBackend):
             if entry.category == category:
                 if success_filter is None or entry.correct == success_filter:
                     matches.append(entry)
-                    
+
         # Sort by relevance (most relevant/recent first)
         matches.sort(key=lambda x: x.relevance, reverse=True)
         return matches[:top_k]
@@ -282,11 +282,11 @@ class TFIDFMemoryBackend(MemoryBackend):
     def save(self) -> None:
         if not self.persistence_path:
             return
-            
+
         try:
             path = Path(self.persistence_path)
             path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             data = {
                 "max_size": self.max_size,
                 "decay_rate": self.decay_rate,
@@ -303,21 +303,21 @@ class TFIDFMemoryBackend(MemoryBackend):
     def load(self) -> None:
         if not self.persistence_path:
             return
-            
+
         path = Path(self.persistence_path)
         if not path.exists():
             return
-            
+
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                
+
             self.max_size = data.get("max_size", self.max_size)
             self.decay_rate = data.get("decay_rate", self.decay_rate)
             self._step_count = data.get("_step_count", 0)
             self._total_docs = data.get("_total_docs", 0)
             self._doc_freq = defaultdict(int, data.get("_doc_freq", {}))
-            
+
             raw_entries = data.get("entries", [])
             self.entries = [MemoryEntry.from_dict(d) for d in raw_entries]
         except Exception as e:

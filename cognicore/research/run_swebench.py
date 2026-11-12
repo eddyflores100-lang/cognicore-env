@@ -32,6 +32,9 @@ from cognicore.research.prompt_mutation import PromptMutationEngine
 from cognicore.research.persistent_store import PersistentCognitionStore
 from cognicore.research.sandbox import sandbox_isolated, sandbox_fast
 from cognicore.research.event_logger import EventLogger, EventType
+import logging
+logger = logging.getLogger("cognicore.research.run_swebench")
+
 
 SESSION = uuid.uuid4().hex[:8]
 EXP_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'experiments')
@@ -54,10 +57,10 @@ def clog(tag, msg, detail=""):
          "SUCCESS":"\033[32m","FAILED":"\033[31m","PROMPT MUTATION":"\033[36m",
          "PERSISTENT":"\033[93m","INFO":"\033[37m","ABLATION":"\033[94m",
          "ISOLATED":"\033[94m","LLM":"\033[94m"}
-    print(f"  {C.get(tag,chr(27)+'[0m')}[{tag}]\033[0m {msg}")
+    logger.info(f"  {C.get(tag,chr(27)+'[0m')}[{tag}]\033[0m {msg}")
     if detail:
         for l in detail.strip().split("\n")[:3]:
-            print(f"         {l}")
+            logger.info(f"         {l}")
 
 def sandbox(code, tests):
     try:
@@ -316,10 +319,10 @@ def run_single(config, ablation_cfg=None, quiet=False, isolated=False,
 # ABLATION STUDY
 # ══════════════════════════════════════════════════════════
 def run_ablation(config):
-    print(f"\n{'='*72}")
-    print(f"  COGNICORE ABLATION STUDY — Component Contribution Analysis")
-    print(f"  Seed: {config.seed} | Tasks: {len(load_swebench_tasks())} | Attempts: {config.max_attempts}")
-    print(f"{'='*72}")
+    logger.info(f"\n{'='*72}")
+    logger.info(f"  COGNICORE ABLATION STUDY — Component Contribution Analysis")
+    logger.info(f"  Seed: {config.seed} | Tasks: {len(load_swebench_tasks())} | Attempts: {config.max_attempts}")
+    logger.info(f"{'='*72}")
 
     rows = []
     for name, abl_cfg in ABLATION_CONFIGS.items():
@@ -327,61 +330,61 @@ def run_ablation(config):
         t = run_single(config, abl_cfg, quiet=True)
         m = t.compute_metrics()
         rows.append({"config": name, **m})
-        print(f"    {name:<20} solved={m['cognicore_solved']}/{m['total_bugs']}  "
+        logger.info(f"    {name:<20} solved={m['cognicore_solved']}/{m['total_bugs']}  "
               f"attempts={m['cognicore_attempts']}  repeated={m['cognicore_repeated']}  "
               f"mem={m['memory_retrievals']}  refl={m['reflections']}  mut={m['strategy_mutations']}  "
               f"rej={m['patch_rejections']}")
 
     # Table
-    print(f"\n{'='*72}")
-    print(f"  ABLATION RESULTS TABLE")
-    print(f"{'='*72}")
-    print(f"  {'Config':<20} {'Solve':>6} {'Attempts':>9} {'Repeated':>9} {'Mem':>5} {'Refl':>5} {'Mut':>5} {'Rej':>5}")
-    print(f"  {'-'*65}")
+    logger.info(f"\n{'='*72}")
+    logger.info(f"  ABLATION RESULTS TABLE")
+    logger.info(f"{'='*72}")
+    logger.info(f"  {'Config':<20} {'Solve':>6} {'Attempts':>9} {'Repeated':>9} {'Mem':>5} {'Refl':>5} {'Mut':>5} {'Rej':>5}")
+    logger.info(f"  {'-'*65}")
     for r in rows:
         n = r['total_bugs']
-        print(f"  {r['config']:<20} {r['cognicore_solved']:>4}/{n} {r['cognicore_attempts']:>9} "
+        logger.info(f"  {r['config']:<20} {r['cognicore_solved']:>4}/{n} {r['cognicore_attempts']:>9} "
               f"{r['cognicore_repeated']:>9} {r['memory_retrievals']:>5} {r['reflections']:>5} "
               f"{r['strategy_mutations']:>5} {r['patch_rejections']:>5}")
 
     # Failure analysis
-    print(f"\n{'='*72}")
-    print(f"  FAILURE ANALYSIS")
-    print(f"{'='*72}")
+    logger.info(f"\n{'='*72}")
+    logger.info(f"  FAILURE ANALYSIS")
+    logger.info(f"{'='*72}")
     base = rows[0]  # baseline
     full = rows[-1]  # full cognicore
     if full['cognicore_solved'] > base['cognicore_solved']:
-        print(f"  CogniCore solved {full['cognicore_solved']-base['cognicore_solved']} more bugs than baseline")
+        logger.info(f"  CogniCore solved {full['cognicore_solved']-base['cognicore_solved']} more bugs than baseline")
     if full['cognicore_repeated'] < base['cognicore_repeated']:
-        print(f"  Repeated patches reduced: {base['cognicore_repeated']} → {full['cognicore_repeated']}")
+        logger.info(f"  Repeated patches reduced: {base['cognicore_repeated']} → {full['cognicore_repeated']}")
     # Component attribution
     for i, r in enumerate(rows[1:-1], 1):
         delta = r['cognicore_solved'] - base['cognicore_solved']
         if delta > 0:
-            print(f"  {r['config']}: +{delta} bugs solved independently")
+            logger.info(f"  {r['config']}: +{delta} bugs solved independently")
 
-    print(f"{'='*72}\n")
+    logger.info(f"{'='*72}\n")
     return rows
 
 # ══════════════════════════════════════════════════════════
 # MULTI-SEED STATISTICAL EVALUATION
 # ══════════════════════════════════════════════════════════
 def run_multi_seed(base_config, n_seeds=5):
-    print(f"\n{'='*72}")
-    print(f"  COGNICORE MULTI-SEED STATISTICAL EVALUATION")
-    print(f"  Seeds: {n_seeds} | Tasks: {len(load_swebench_tasks())} | Attempts: {base_config.max_attempts}")
-    print(f"{'='*72}\n")
+    logger.info(f"\n{'='*72}")
+    logger.info(f"  COGNICORE MULTI-SEED STATISTICAL EVALUATION")
+    logger.info(f"  Seeds: {n_seeds} | Tasks: {len(load_swebench_tasks())} | Attempts: {base_config.max_attempts}")
+    logger.info(f"{'='*72}\n")
 
     all_metrics = []
     for i in range(n_seeds):
         seed = base_config.seed + i
         cfg = ExperimentConfig(seed=seed, max_attempts=base_config.max_attempts,
                                 similarity_threshold=base_config.similarity_threshold)
-        print(f"  Seed {seed}...", end=" ", flush=True)
+        logger.info(f"  Seed {seed}...", end=" ", flush=True)
         t = run_single(cfg, quiet=True)
         m = t.compute_metrics()
         all_metrics.append(m)
-        print(f"baseline={m['baseline_solved']}/{m['total_bugs']}  "
+        logger.info(f"baseline={m['baseline_solved']}/{m['total_bugs']}  "
               f"cognicore={m['cognicore_solved']}/{m['total_bugs']}  "
               f"repeated={m['baseline_repeated']}→{m['cognicore_repeated']}")
 
@@ -397,11 +400,11 @@ def run_multi_seed(base_config, n_seeds=5):
             std, ci95 = 0, 0
         return mean, std, ci95
 
-    print(f"\n{'='*72}")
-    print(f"  STATISTICAL RESULTS (n={n_seeds})")
-    print(f"{'='*72}")
-    print(f"  {'Metric':<35} {'Mean±Std':>15} {'95% CI':>12}")
-    print(f"  {'-'*62}")
+    logger.info(f"\n{'='*72}")
+    logger.info(f"  STATISTICAL RESULTS (n={n_seeds})")
+    logger.info(f"{'='*72}")
+    logger.info(f"  {'Metric':<35} {'Mean±Std':>15} {'95% CI':>12}")
+    logger.info(f"  {'-'*62}")
     for key, label in [
         ("baseline_solved", "Baseline Solved"),
         ("cognicore_solved", "CogniCore Solved"),
@@ -415,16 +418,16 @@ def run_multi_seed(base_config, n_seeds=5):
         ("strategy_mutations", "Mutations"),
     ]:
         m, s, ci = stats(key)
-        print(f"  {label:<35} {m:>7.1f}±{s:<5.1f}   ±{ci:.1f}")
+        logger.info(f"  {label:<35} {m:>7.1f}±{s:<5.1f}   ±{ci:.1f}")
 
-    print(f"\n  VERDICT:")
+    logger.info(f"\n  VERDICT:")
     bm, _, _ = stats("baseline_solved")
     cm, _, _ = stats("cognicore_solved")
     brm, _, _ = stats("baseline_repeated")
     crm, _, _ = stats("cognicore_repeated")
-    print(f"  CogniCore solves {cm:.1f} vs baseline {bm:.1f} (Δ={cm-bm:+.1f})")
-    print(f"  Repeated patches: {brm:.1f} → {crm:.1f} (Δ={crm-brm:+.1f})")
-    print(f"{'='*72}\n")
+    logger.info(f"  CogniCore solves {cm:.1f} vs baseline {bm:.1f} (Δ={cm-bm:+.1f})")
+    logger.info(f"  Repeated patches: {brm:.1f} → {crm:.1f} (Δ={crm-brm:+.1f})")
+    logger.info(f"{'='*72}\n")
     return all_metrics
 
 # ══════════════════════════════════════════════════════════
@@ -464,6 +467,6 @@ if __name__ == "__main__":
         t.print_report()
         rp = t.save()
         evt_path = logger.save()
-        print(f"\n  Report: {rp}")
-        print(f"  Events: {evt_path} (checksum: {logger.get_checksum()})")
-        print(f"  Split: {a.split} | Isolated: {a.isolated}")
+        logger.info(f"\n  Report: {rp}")
+        logger.info(f"  Events: {evt_path} (checksum: {logger.get_checksum()})")
+        logger.info(f"  Split: {a.split} | Isolated: {a.isolated}")

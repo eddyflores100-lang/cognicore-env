@@ -150,14 +150,14 @@ def cognicore_recall_experience(
         user_uuid = require_auth(ctx)
     except AuthError as e:
         return handle_auth_error(e)
-        
+
     backend = get_backend_for_user(user_uuid)
     manager = ExperienceManager(backend)
-    
+
     current_env = None
     if environment_filter:
         current_env = EnvironmentContext(framework=environment_filter)
-        
+
     results = manager.retrieve(
         query=query,
         current_env=current_env,
@@ -165,7 +165,7 @@ def cognicore_recall_experience(
         require_verified=False,
         top_k=5,
     )
-    
+
     output = {
         "query": query,
         "total_candidates": results.total_candidates,
@@ -201,7 +201,7 @@ def cognicore_recall_experience(
             fw["approach"] = fail.attempts[0].approach
             fw["reason"] = fail.attempts[0].reason
         output["failure_warnings"].append(fw)
-        
+
     return json.dumps(output, indent=2)
 
 @mcp.tool()
@@ -218,10 +218,10 @@ def cognicore_record_experience(
         user_uuid = require_auth(ctx)
     except AuthError as e:
         return handle_auth_error(e)
-        
+
     backend = get_backend_for_user(user_uuid)
     manager = ExperienceManager(backend)
-    
+
     parsed_attempts = []
     if attempts:
         for a in attempts:
@@ -232,7 +232,7 @@ def cognicore_record_experience(
                     reason=a.get("reason", ""),
                     evidence=a.get("evidence", ""),
                 ))
-            
+
     experience = StructuredExperience(
         task=task,
         problem=problem,
@@ -243,10 +243,10 @@ def cognicore_record_experience(
         repository=RepositoryContext(),
         environment=EnvironmentContext(),
     )
-    
+
     exp_id = manager.record(experience)
     n_failures = len([a for a in parsed_attempts if a.outcome == AttemptOutcome.FAILURE.value])
-    
+
     return json.dumps({
         "status": "recorded",
         "experience_id": exp_id,
@@ -267,10 +267,10 @@ def cognicore_verify_experience(
         user_uuid = require_auth(ctx)
     except AuthError as e:
         return handle_auth_error(e)
-        
+
     backend = get_backend_for_user(user_uuid)
     manager = ExperienceManager(backend)
-    
+
     evidence_records = []
     if evidence:
         evidence_records.append(EvidenceRecord(
@@ -279,10 +279,10 @@ def cognicore_verify_experience(
             stdout_hash=evidence,
             timestamp=datetime.now(timezone.utc).isoformat(),
         ))
-        
+
     vresult = manager.verify(experience_id, evidence_records)
     new_id = getattr(vresult, '_promoted_id', experience_id)
-    
+
     return json.dumps({
         "status": "verified" if vresult.passed else "failed",
         "experience_id": new_id,
@@ -301,10 +301,10 @@ def cognicore_check_experience(
         user_uuid = require_auth(ctx)
     except AuthError as e:
         return handle_auth_error(e)
-        
+
     backend = get_backend_for_user(user_uuid)
     manager = ExperienceManager(backend)
-    
+
     # Just retrieving it basically checks if it exists in the user's DB
     try:
         results = manager.retrieve(query="", require_verified=False)
@@ -333,9 +333,9 @@ Note: SQLite VACUUM reclaims logical database space but does not guarantee crypt
         user_uuid = require_auth(ctx)
     except AuthError as e:
         return handle_auth_error(e)
-        
+
     backend = get_backend_for_user(user_uuid)
-    
+
     # Empty the tables safely and close connections properly
     import sqlite3
     try:
@@ -348,14 +348,14 @@ Note: SQLite VACUUM reclaims logical database space but does not guarantee crypt
                 conn.execute("DELETE FROM session_memories")
         finally:
             conn.close()
-            
+
         # Run VACUUM to ensure disk blocks are overwritten and space reclaimed
         conn_vac = sqlite3.connect(backend.db_path, isolation_level=None)
         try:
             conn_vac.execute("VACUUM")
         finally:
             conn_vac.close()
-            
+
     except Exception as e:
         import logging
         logging.getLogger("cognicore.chatgpt").error(f"Database wipe failed: {e}")
@@ -363,7 +363,7 @@ Note: SQLite VACUUM reclaims logical database space but does not guarantee crypt
             "status": "error",
             "message": f"Failed to securely wipe database records."
         }, indent=2)
-        
+
     # Remove files from disk (db, -wal, -shm)
     import os
     failed_files = []
@@ -374,13 +374,13 @@ Note: SQLite VACUUM reclaims logical database space but does not guarantee crypt
                 os.remove(target)
             except Exception as e:
                 failed_files.append(target)
-                
+
     if failed_files:
         return json.dumps({
             "status": "deleted",
             "message": f"Data was securely wiped via VACUUM, but could not unlink empty physical files (OS lock): {failed_files}"
         }, indent=2)
-                
+
     return json.dumps({
         "status": "deleted",
         "message": "All data has been permanently deleted and files removed."

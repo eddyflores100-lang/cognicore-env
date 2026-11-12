@@ -3,6 +3,9 @@ import sys,os;sys.path.insert(0,os.path.join(os.path.dirname(__file__),'..','..'
 from cognicore.research.persistent_store import PersistentCognitionStore
 from cognicore.nexus.run import run_nexus
 from cognicore.nexus.trajectory_store import TrajectoryStore
+import logging
+logger = logging.getLogger("cognicore.nexus.bench_final")
+
 
 PersistentCognitionStore().clear()
 TrajectoryStore().clear()
@@ -16,4 +19,4 @@ for p in ['minimal','standard','test_first','review_first']:
     s = r['solved']
     t = r['total']
     tok = r['token_total']
-    print(f"{p}|{s}/{t}|{att}|{tok}|{tps}|{fails}")
+    logger.info(f"{p}|{s}/{t}|{att}|{tok}|{tps}|{fails}")

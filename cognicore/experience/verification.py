@@ -23,9 +23,9 @@ class VerificationResult:
 class VerificationGate:
     """
     The most critical component for experience validation.
-    
+
     This gate is responsible for validating pre-collected evidence.
-    Security Model: The gate validates evidence, it does NOT execute commands. 
+    Security Model: The gate validates evidence, it does NOT execute commands.
     The runtime/agent is responsible for running tests and collecting evidence.
     """
 
@@ -120,7 +120,7 @@ class VerificationGate:
             logger.warning(f"Failed to re-store experience {old_id} after promotion: {e}")
 
         logger.info(f"Promoted experience {experience.experience_id} to VERIFIED.")
-        
+
         return experience
 
     def check_transferable(
@@ -145,13 +145,13 @@ class VerificationGate:
             A VerificationResult indicating if it is transferable.
         """
         blockers = []
-        
+
         valid_states = {
             VerificationStatus.VERIFIED.value,
             VerificationStatus.PROMOTED.value,
             VerificationStatus.TRANSFERABLE.value
         }
-        
+
         if experience.verification_status not in valid_states:
             blockers.append(f"Experience status must be at least VERIFIED, found: {experience.verification_status}")
 
@@ -211,7 +211,7 @@ class VerificationGate:
             no_conflict=no_conflict,
             not_superseded=not_superseded
         )
-        
+
         if result.passed:
             backend.update(experience.experience_id, state=MemoryState.TRANSFERABLE.value)
             experience.verification_status = VerificationStatus.TRANSFERABLE.value

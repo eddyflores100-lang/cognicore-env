@@ -17,16 +17,16 @@ logger = logging.getLogger('cognicore.experience')
 
 def _parse_version(version_str: str) -> Tuple[int, int, int]:
     """Parse 'X.Y.Z' or 'X.Y' or 'X' into (major, minor, patch) tuple.
-    
+
     Handles malformed strings gracefully by returning (0, 0, 0).
     """
     if not version_str:
         return (0, 0, 0)
-    
+
     match = re.search(r'^(\d+)(?:\.(\d+))?(?:\.(\d+))?', str(version_str))
     if not match:
         return (0, 0, 0)
-        
+
     major = int(match.group(1)) if match.group(1) else 0
     minor = int(match.group(2)) if match.group(2) else 0
     patch = int(match.group(3)) if match.group(3) else 0
@@ -36,7 +36,7 @@ def _parse_version(version_str: str) -> Tuple[int, int, int]:
 @dataclass
 class CompatibilityResult:
     """Result of a compatibility check.
-    
+
     Graduated compatibility model:
     - hard blocker: precludes transferring the experience completely.
     - warning: minor mismatch that might require adaptation.
@@ -50,18 +50,18 @@ class CompatibilityResult:
 
 class EnvironmentChecker:
     """Evaluates environment and repository compatibility for experiences."""
-    
+
     def check(self, source_env: EnvironmentContext, target_env: EnvironmentContext) -> CompatibilityResult:
         """Check compatibility between two environments."""
         score = 1.0
         blockers: List[str] = []
         warnings: List[str] = []
-        
+
         # Check python_version
         if source_env.python_version and target_env.python_version:
             s_major, s_minor, _ = _parse_version(source_env.python_version)
             t_major, t_minor, _ = _parse_version(target_env.python_version)
-            
+
             if s_major != t_major:
                 blockers.append(f"Python major version mismatch: {s_major} vs {t_major}")
                 score -= 0.5
@@ -73,7 +73,7 @@ class EnvironmentChecker:
                 elif diff >= 1:
                     warnings.append(f"Python minor version mismatch: {s_minor} vs {t_minor}")
                     score -= 0.05
-                    
+
         # Check framework
         if source_env.framework and target_env.framework:
             if source_env.framework.lower() != target_env.framework.lower():
@@ -83,21 +83,21 @@ class EnvironmentChecker:
                 if source_env.framework_version and target_env.framework_version:
                     s_fmajor, s_fminor, _ = _parse_version(source_env.framework_version)
                     t_fmajor, t_fminor, _ = _parse_version(target_env.framework_version)
-                    
+
                     if s_fmajor != t_fmajor:
                         blockers.append(f"Framework major version mismatch: {s_fmajor} vs {t_fmajor}")
                         score -= 0.3
                     elif s_fminor != t_fminor:
                         warnings.append(f"Framework minor version mismatch: {s_fminor} vs {t_fminor}")
                         score -= 0.05
-                        
+
         # Check dependencies
         for dep, s_ver in source_env.dependencies.items():
             if dep in target_env.dependencies:
                 t_ver = target_env.dependencies[dep]
                 s_dmajor, s_dminor, _ = _parse_version(s_ver)
                 t_dmajor, t_dminor, _ = _parse_version(t_ver)
-                
+
                 if s_dmajor != t_dmajor:
                     blockers.append(f"Dependency major mismatch for {dep}: {s_ver} vs {t_ver}")
                     score -= 0.2
@@ -106,16 +106,16 @@ class EnvironmentChecker:
                     score -= 0.02
             else:
                 warnings.append(f"Dependency {dep} in source but missing in target")
-                
+
         # Check os
         if source_env.os and target_env.os and source_env.os.lower() != target_env.os.lower():
             warnings.append(f"OS mismatch: {source_env.os} vs {target_env.os}")
             score -= 0.05
-            
+
         score = max(0.0, min(1.0, score))
         compatible = len(blockers) == 0
         confidence_modifier = max(0.1, score)
-        
+
         return CompatibilityResult(
             compatible=compatible,
             score=score,
@@ -129,24 +129,24 @@ class EnvironmentChecker:
         score = 1.0
         blockers: List[str] = []
         warnings: List[str] = []
-        
+
         if source_repo.repo_id and target_repo.repo_id and source_repo.repo_id != target_repo.repo_id:
             blockers.append("Different repository")
             score -= 0.8
-            
+
         if source_repo.repo_id == target_repo.repo_id and source_repo.commit and target_repo.commit and source_repo.commit != target_repo.commit:
             warnings.append("Different commit in same repository")
             score -= 0.1
-            
+
         s_files = set(source_repo.affected_files)
         t_files = set(target_repo.affected_files)
         if s_files and t_files and s_files.intersection(t_files):
             score += 0.2
-            
+
         score = max(0.0, min(1.0, score))
         compatible = len(blockers) == 0
         confidence_modifier = max(0.1, score)
-        
+
         return CompatibilityResult(
             compatible=compatible,
             score=score,
@@ -154,20 +154,20 @@ class EnvironmentChecker:
             warnings=warnings,
             confidence_modifier=confidence_modifier
         )
-        
+
     def full_check(self, source_env: EnvironmentContext, target_env: EnvironmentContext, source_repo: RepositoryContext, target_repo: RepositoryContext) -> CompatibilityResult:
         """Perform a full compatibility check combining environment and repository contexts."""
         env_res = self.check(source_env, target_env)
         repo_res = self.check_repository(source_repo, target_repo)
-        
+
         blockers = env_res.blockers + repo_res.blockers
         warnings = env_res.warnings + repo_res.warnings
         score = env_res.score * repo_res.score
-        
+
         score = max(0.0, min(1.0, score))
         compatible = len(blockers) == 0
         confidence_modifier = max(0.1, score)
-        
+
         return CompatibilityResult(
             compatible=compatible,
             score=score,

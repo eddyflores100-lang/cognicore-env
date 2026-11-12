@@ -6,6 +6,9 @@ import os, json, time, threading
 from pathlib import Path
 from datetime import datetime
 from cognicore.integrations.task_queue import NexusTask, NexusTaskQueue, TaskSource
+import logging
+logger = logging.getLogger("cognicore.integrations.scheduler")
+
 
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
@@ -39,7 +42,7 @@ class NexusScheduler:
 
         try:
             import yaml
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
             return data.get("schedules", [])
         except ImportError:
@@ -49,7 +52,7 @@ class NexusScheduler:
     def start(self):
         """Start the scheduler with all configured jobs."""
         if not self.scheduler:
-            print("  [Scheduler] APScheduler not installed. pip install apscheduler")
+            logger.info("  [Scheduler] APScheduler not installed. pip install apscheduler")
             return
 
         schedules = self.load_schedules()
@@ -57,7 +60,7 @@ class NexusScheduler:
             self.add_job(sched)
 
         self.scheduler.start()
-        print(f"  [Scheduler] Started with {len(self._jobs)} jobs")
+        logger.info(f"  [Scheduler] Started with {len(self._jobs)} jobs")
 
     def stop(self):
         if self.scheduler:
@@ -81,7 +84,7 @@ class NexusScheduler:
     def _execute_schedule(self, name, task_type, repo, config):
         """Execute a scheduled task."""
         now = datetime.utcnow().isoformat()
-        print(f"  [Scheduler] Running: {name} ({task_type})")
+        logger.info(f"  [Scheduler] Running: {name} ({task_type})")
 
         task = NexusTask(
             source=TaskSource.SCHEDULED.value,

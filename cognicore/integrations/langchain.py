@@ -124,7 +124,7 @@ class CogniCoreMemoryTool(BaseTool):
              success: bool = False, error: str = "") -> str:
         from cognicore.memory.base import MemoryEntry
         self._runtime.memory.store(MemoryEntry(
-            category=category, 
+            category=category,
             correct=success,
             action=f"tactic:{tactic} {'PASS' if success else 'FAIL'}",
             text=error
@@ -229,7 +229,7 @@ class CogniCoreCallbackHandler(BaseCallbackHandler):
         handler = CogniCoreCallbackHandler()
         llm = ChatOpenAI(callbacks=[handler])
     """
-    
+
     ignore_llm: bool = False
     ignore_retry: bool = False
     ignore_chain: bool = False
@@ -291,7 +291,7 @@ class CogniCoreCallbackHandler(BaseCallbackHandler):
             response_text = str(response)[:500]
 
         category = f"{self.category_prefix}.llm_call"
-        
+
         from cognicore.memory.base import MemoryEntry
         self._runtime.memory.store(MemoryEntry(
             text=(pending.get("prompts", [""])[0][:300] + " → " + response_text[:300]),
@@ -313,7 +313,7 @@ class CogniCoreCallbackHandler(BaseCallbackHandler):
 
         category = f"{self.category_prefix}.llm_error"
         error_str = f"{type(error).__name__}: {str(error)[:200]}"
-        
+
         from cognicore.memory.base import MemoryEntry
         self._runtime.memory.store(MemoryEntry(
             text=error_str,

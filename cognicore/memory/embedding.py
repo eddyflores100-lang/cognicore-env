@@ -43,7 +43,7 @@ class EmbeddingMemory:
     Usage::
         memory = EmbeddingMemory(model_name="all-MiniLM-L6-v2")
         memory.store("Agent hit wall at position (3,4)", {"pos": (3,4), "reward": -1})
-        
+
         # Later, retrieve similar experiences
         results = memory.retrieve("Near wall at position (3,5)", top_k=3)
         # Returns experiences about walls, even though position is different
@@ -273,7 +273,7 @@ class CognitiveGymWrapper(gym.Wrapper if gym is not None else object):
         self._episode += 1
         self._step_count = 0
         obs, info = self.env.reset(**kwargs)
-        
+
         # Add memory context
         memories = self.memory.retrieve(obs, top_k=self.top_k)
         info["cognicore_memory"] = memories

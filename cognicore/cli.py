@@ -296,10 +296,10 @@ def cmd_sleep(args):
     from cognicore.memory.sqlite_backend import SQLiteMemoryBackend
     from cognicore.memory.sleep import SleepProcessor
     import os
-    
+
     print("\n  CogniCore Sleep Consolidation")
     print(f"  {'=' * 45}")
-    
+
     if args.backend == "sqlite":
         db_path = args.db_path or "cognicore_memory.db"
         print(f"  Using SQLite memory backend at: {db_path}")
@@ -310,15 +310,15 @@ def cmd_sleep(args):
         backend = TFIDFMemoryBackend(persistence_path=path)
         if os.path.exists(path):
             backend.load(path)
-            
+
     processor = SleepProcessor(backend=backend)
     stats = processor.sleep()
-    
+
     print("\n  Consolidation complete:")
     print(f"    Merged duplicate entries:       {stats.get('merged', 0)}")
     print(f"    Archived contradictions:        {stats.get('archived_contradictions', 0)}")
     print(f"    Compressed episodic memories:   {stats.get('compressed_episodes', 0)}")
-    
+
     if args.backend == "sqlite":
         pass
     else:
@@ -332,7 +332,7 @@ def cmd_passport(args):
     """Inspect or manage Agent Passports."""
     from cognicore.passport import AgentPassport
     import json
-    
+
     if args.action == "inspect":
         print(f"\n  Passport Inspection: {args.file}")
         print(f"  {'=' * 45}")
@@ -356,7 +356,7 @@ def cmd_civilization(args):
     """Run a Civilization Server."""
     from cognicore.civilization import CivilizationServer
     import time
-    
+
     if args.action == "serve":
         port = args.port
         print(f"\n  Starting Civilization Server on port {port}...")
@@ -414,18 +414,18 @@ def main():
     s.add_argument("--backend", default="tfidf", choices=["tfidf", "sqlite"])
     s.add_argument("--path", type=str, default=None, help="Path to TF-IDF json memory file")
     s.add_argument("--db-path", type=str, default=None, help="Path to SQLite database")
-    
+
     pass_cmd = sub.add_parser("passport", help="Inspect Agent Passports")
     pass_cmd.add_argument("action", choices=["inspect"])
     pass_cmd.add_argument("file", help="Path to .passport file")
-    
+
     civ_cmd = sub.add_parser("civilization", help="Manage Civilization Server")
     civ_cmd.add_argument("action", choices=["serve"])
     civ_cmd.add_argument("--port", type=int, default=9876, help="Port to serve on")
-    
+
     std_cmd = sub.add_parser("studio", help="Start the Memory Observability Studio")
     std_cmd.add_argument("--port", type=int, default=8060, help="Port to serve on")
-    
+
     args = p.parse_args()
     cmds = {"list": cmd_list, "train": cmd_train, "benchmark": cmd_benchmark,
             "arena": cmd_arena, "ui": cmd_ui, "integrations": cmd_integrations,

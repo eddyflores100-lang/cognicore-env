@@ -81,7 +81,7 @@ class EventLogger:
 
     def save(self) -> str:
         path = self.output_dir / f"events_{self.experiment_id}.jsonl"
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             for event in self.events:
                 f.write(json.dumps(event, default=str) + "\n")
         # Also save a summary
@@ -96,7 +96,7 @@ class EventLogger:
         for e in self.events:
             t = e["type"]
             summary["event_types"][t] = summary["event_types"].get(t, 0) + 1
-        with open(self.output_dir / f"summary_{self.experiment_id}.json", "w") as f:
+        with open(self.output_dir / f"summary_{self.experiment_id}.json", "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
         return str(path)
 

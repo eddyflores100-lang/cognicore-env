@@ -54,13 +54,13 @@ def _get_project_id() -> str:
     import hashlib
     current = Path.cwd().resolve()
     target = current
-    
+
     # Traverse up to find .git
     for p in [current] + list(current.parents):
         if (p / ".git").is_dir():
             target = p
             break
-            
+
     # Create a stable, sanitized hash of the absolute path
     path_str = str(target)
     return hashlib.sha256(path_str.encode("utf-8")).hexdigest()
@@ -69,9 +69,9 @@ def _ensure_backend():
     global _backend
     if _backend is not None:
         return
-    
+
     db_path = _get_data_dir() / "memory.db"
-    
+
     provider = None
     if _HAS_SEMANTIC and os.environ.get("COGNICORE_USE_SEMANTIC", "1") != "0":
         try:
@@ -79,7 +79,7 @@ def _ensure_backend():
             logger.info("Semantic search enabled via sentence-transformers")
         except Exception as e:
             logger.warning(f"Failed to load sentence-transformers, falling back to lexical search: {e}")
-            
+
     _backend = SQLiteMemoryBackend(str(db_path), provider=provider)
     logger.info(f"Initialized CogniCore Extension Memory at {db_path}")
 
@@ -90,7 +90,7 @@ def create_extension_server() -> "FastMCP":
             "The 'mcp' package is required for MCP server support. "
             "Install it with: pip install mcp"
         )
-        
+
     mcp = FastMCP(
         "cognicore-memory",
         instructions=(
@@ -111,14 +111,14 @@ def create_extension_server() -> "FastMCP":
     def cognicore_remember(text: str, category: str = "", scope: str = "user") -> str:
         """Store a fact, preference, or decision. Auto-decomposes and auto-categorizes."""
         _ensure_backend()
-        
+
         try:
             mem_scope = MemoryScope(scope.lower())
         except ValueError:
             return "Error: scope must be 'user' or 'project'."
-            
+
         scope_id = _get_project_id() if mem_scope == MemoryScope.PROJECT else ""
-        
+
         facts = decompose(text)
         ids = []
         cats_detected = set()
@@ -151,23 +151,23 @@ def create_extension_server() -> "FastMCP":
     def cognicore_recall(query: str, category: str = "", scope: str = "user", top_k: int = 5) -> str:
         """Search memory. Returns scored results sorted by relevance."""
         _ensure_backend()
-        
+
         try:
             mem_scope = MemoryScope(scope.lower())
         except ValueError:
             return "Error: scope must be 'user' or 'project'."
-            
+
         scope_id = _get_project_id() if mem_scope == MemoryScope.PROJECT else None
-        
+
         try:
             results = _backend.search(
-                query=query, 
-                top_k=top_k, 
+                query=query,
+                top_k=top_k,
                 category=category if category else None,
                 scope=mem_scope,
                 scope_id=scope_id
             )
-            
+
             if not results:
                 return "(none)"
 
@@ -187,7 +187,7 @@ def create_extension_server() -> "FastMCP":
     def cognicore_forget(entry_id: Any) -> str:
         """Delete a memory by ID."""
         _ensure_backend()
-        
+
         try:
             success = _backend.delete(str(entry_id))
             return "OK" if success else "Not found"
@@ -199,23 +199,23 @@ def create_extension_server() -> "FastMCP":
     def cognicore_list(limit: int = 10, category: str = "", scope: str = "user") -> str:
         """List recent memories with categories."""
         _ensure_backend()
-        
+
         try:
             mem_scope = MemoryScope(scope.lower())
         except ValueError:
             return "Error: scope must be 'user' or 'project'."
-            
+
         scope_id = _get_project_id() if mem_scope == MemoryScope.PROJECT else None
-        
+
         try:
             results = _backend.search(
-                query="", 
-                top_k=limit, 
+                query="",
+                top_k=limit,
                 category=category if category else None,
                 scope=mem_scope,
                 scope_id=scope_id
             )
-            
+
             if not results:
                 return "(empty)"
             lines = []
@@ -230,12 +230,12 @@ def create_extension_server() -> "FastMCP":
     def cognicore_stats() -> str:
         """Memory statistics: count, categories, uptime, storage."""
         _ensure_backend()
-        
+
         try:
             count = _backend.count()
             db_path = _get_data_dir() / "memory.db"
             mode = "Semantic (sentence-transformers)" if _backend.provider else "BM25 (SQLite FTS5)"
-            
+
             # Category breakdown
             all_results = _backend.search(query="", top_k=10000, scope=MemoryScope.USER)
             cat_counts = {}
@@ -270,7 +270,7 @@ def main():
     )
     # stdio uses stdout for communication, so ensure logger goes to stderr
     logging.getLogger().handlers[0].stream = sys.stderr
-    
+
     server = create_extension_server()
     server.run(transport="stdio")
 

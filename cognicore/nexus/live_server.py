@@ -15,9 +15,12 @@ try:
     from fastapi.middleware.cors import CORSMiddleware
     import uvicorn
 except ImportError:
-    print("pip install fastapi uvicorn"); sys.exit(1)
+    logger.info("pip install fastapi uvicorn"); sys.exit(1)
 
 from cognicore.nexus.live_instrument import FullInstrumentor, LiveEvent
+import logging
+logger = logging.getLogger("cognicore.nexus.live_server")
+
 
 _inst = None
 _sockets: Set[WebSocket] = set()
@@ -164,7 +167,7 @@ async def tasks():
                     "tokens": sum(e.tokens_in + e.tokens_out for e in evts),
                 })
         return JSONResponse({"tasks": items})
-    except:
+    except Exception:
         return JSONResponse({"tasks": []})
 
 @app.get("/api/stats")
@@ -253,8 +256,8 @@ async def ui():
 if __name__ == "__main__":
     port = int(os.environ.get("NEXUS_PORT", "8420"))
     host = os.environ.get("NEXUS_HOST", "127.0.0.1")
-    print(f"\n  NEXUS Live Runtime v1.0")
-    print(f"  http://{host}:{port}")
-    print(f"  WebSocket: ws://{host}:{port}/ws\n")
+    logger.info(f"\n  NEXUS Live Runtime v1.0")
+    logger.info(f"  http://{host}:{port}")
+    logger.info(f"  WebSocket: ws://{host}:{port}/ws\n")
     uvicorn.run(app, host=host, port=port, log_level="warning")
 

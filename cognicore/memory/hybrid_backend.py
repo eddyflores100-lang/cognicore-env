@@ -9,7 +9,7 @@ logger = logging.getLogger("cognicore.hybrid")
 
 class HybridMemoryBackend(MemoryBackend):
     """Hybrid memory backend fusing sparse (TF-IDF) and dense (vector) retrievals.
-    
+
     Uses Reciprocal Rank Fusion (RRF) combined with utility score and recency
     weighting to produce robust, context-aware memory retrieval. Degrades gracefully
     to pure TF-IDF if dense backend is unavailable.
@@ -36,30 +36,30 @@ class HybridMemoryBackend(MemoryBackend):
         if not entry.entry_id:
             import uuid
             entry.entry_id = f"mem_{int(time.time()*1000)}_{uuid.uuid4().hex[:6]}"
-            
+
         entry_id = self.sparse_backend.store(entry)
-        
+
         if self.dense_backend:
             try:
                 self.dense_backend.store(entry)
             except Exception as e:
                 logger.warning(f"Failed to store entry in dense backend: {e}. Desync might occur.")
-                
+
         return entry_id
 
-    def search(self, 
-               query: str, 
+    def search(self,
+               query: str,
                top_k: int = 5,
                category: Optional[str] = None,
                scope: Optional[MemoryScope] = None,
                scope_id: Optional[str] = None,
                question_timestamp: Optional[float] = None) -> List[SearchResult]:
         """Perform hybrid search using RRF and utility scoring."""
-        
+
         # If no dense backend, fall back immediately to sparse search
         if not self.dense_backend:
             return self.sparse_backend.search(
-                query, top_k=top_k, category=category, scope=scope, scope_id=scope_id, 
+                query, top_k=top_k, category=category, scope=scope, scope_id=scope_id,
                 question_timestamp=question_timestamp
             )
 
@@ -104,15 +104,15 @@ class HybridMemoryBackend(MemoryBackend):
         final_results: List[SearchResult] = []
         for eid, rrf_score in rrf_scores.items():
             entry = entry_map[eid]
-            
+
             # Boost based on utility score (clamped to [-1.0, 1.0])
             utility_boost = 1.0 + (self.w_utility * entry.utility_score)
-            
+
             # Boost based on recency (relevance decays over time in sparse backend)
             recency_boost = 1.0 + (self.w_recency * entry.relevance)
-            
+
             final_score = rrf_score * utility_boost * recency_boost
-            
+
             final_results.append(SearchResult(
                 entry=entry,
                 score=final_score,
@@ -123,8 +123,8 @@ class HybridMemoryBackend(MemoryBackend):
         final_results.sort(key=lambda x: x.score, reverse=True)
         return final_results[:top_k]
 
-    def get_by_category(self, 
-                        category: str, 
+    def get_by_category(self,
+                        category: str,
                         top_k: int = 5,
                         success_filter: Optional[bool] = None) -> List[MemoryEntry]:
         """Category-exact retrieval."""
@@ -167,7 +167,7 @@ class HybridMemoryBackend(MemoryBackend):
         self.sparse_backend.load()
         if self.dense_backend:
             self.dense_backend.load()
-            
+
     def _get_all_entries(self) -> List[MemoryEntry]:
         """Internal accessor for all entries."""
         return self.sparse_backend._get_all_entries()

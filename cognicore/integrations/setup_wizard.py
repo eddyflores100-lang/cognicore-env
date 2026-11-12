@@ -3,6 +3,9 @@ NEXUS Integration Setup Wizard — interactive CLI for configuring integrations.
 """
 import os, sys, json
 from pathlib import Path
+import logging
+logger = logging.getLogger("cognicore.integrations.setup_wizard")
+
 
 CONFIG_DIR = Path.home() / ".cognicore"
 CONFIG_FILE = CONFIG_DIR / "config.yml"
@@ -12,15 +15,15 @@ SCHEDULE_FILE = CONFIG_DIR / "schedule.yml"
 def setup_wizard():
     """Interactive setup for NEXUS enterprise integrations."""
     CONFIG_DIR.mkdir(exist_ok=True)
-    print("\n  ======================================")
-    print("   NEXUS Integration Setup Wizard")
-    print("  ======================================\n")
+    logger.info("\n  ======================================")
+    logger.info("   NEXUS Integration Setup Wizard")
+    logger.info("  ======================================\n")
 
     config = {"nexus": {"version": "0.6.0", "local_port": 7842}, "integrations": {}, "defaults": {
         "policy": "test_first", "max_attempts": 3, "budget_per_task": 2.0}}
 
     # Step 1: Select integrations
-    print("  Step 1: Which integrations do you want?\n")
+    logger.info("  Step 1: Which integrations do you want?\n")
     integrations = [
         ("github", "GitHub Issues (auto-fix labeled issues)"),
         ("ci", "CI Fixer (auto-repair failed workflows)"),
@@ -39,7 +42,7 @@ def setup_wizard():
 
     # Step 2: GitHub setup
     if selected.get("github") or selected.get("ci") or selected.get("pr_review"):
-        print("\n  Step 2: GitHub Setup\n")
+        logger.info("\n  Step 2: GitHub Setup\n")
         token = input("    GitHub token (or GITHUB_TOKEN env var): ").strip()
         if not token:
             token = os.environ.get("GITHUB_TOKEN", "")
@@ -59,15 +62,15 @@ def setup_wizard():
                 gh = GitHubIssuesTrigger(config["integrations"]["github"])
                 if gh.available:
                     issues = gh.list_nexus_issues(repo)
-                    print(f"    Connected. Found {len(issues)} nexus-labeled issues.")
+                    logger.info(f"    Connected. Found {len(issues)} nexus-labeled issues.")
                 else:
-                    print("    Token set but PyGithub not installed: pip install PyGithub")
+                    logger.info("    Token set but PyGithub not installed: pip install PyGithub")
             except Exception as e:
-                print(f"    Connection test: {e}")
+                logger.info(f"    Connection test: {e}")
 
     # Step 3: Slack setup
     if selected.get("slack"):
-        print("\n  Step 3: Slack Setup\n")
+        logger.info("\n  Step 3: Slack Setup\n")
         bot_token = input("    Bot token (or SLACK_BOT_TOKEN env var): ").strip()
         signing = input("    Signing secret: ").strip()
         config["integrations"]["slack"] = {
@@ -80,7 +83,7 @@ def setup_wizard():
 
     # Step 4: Linear setup
     if selected.get("linear"):
-        print("\n  Step 4: Linear Setup\n")
+        logger.info("\n  Step 4: Linear Setup\n")
         api_key = input("    Linear API key: ").strip()
         config["integrations"]["linear"] = {"api_key": "$LINEAR_API_KEY", "trigger_label": "nexus"}
         if api_key:
@@ -88,7 +91,7 @@ def setup_wizard():
 
     # Step 5: Scheduler
     if selected.get("scheduler"):
-        print("\n  Step 5: Schedule Setup\n")
+        logger.info("\n  Step 5: Schedule Setup\n")
         try:
             nightly = input("    Run nightly bug fixes? [Y/n]: ").strip().lower()
         except (EOFError, KeyboardInterrupt):
@@ -101,17 +104,17 @@ def setup_wizard():
                  "task": "fix_labeled_issues", "repo": config.get("integrations", {}).get("github", {}).get("repo", "")}
             ]}
             # Write schedule
-            with open(SCHEDULE_FILE, 'w') as f:
+            with open(SCHEDULE_FILE, 'w', encoding="utf-8") as f:
                 try:
                     import yaml
                     yaml.dump(schedule, f)
                 except ImportError:
                     json.dump(schedule, f, indent=2)
-            print(f"    Scheduled: nightly at {time_str} UTC")
+            logger.info(f"    Scheduled: nightly at {time_str} UTC")
         config["integrations"]["scheduler"] = {"enabled": True, "timezone": "UTC"}
 
     # Step 6: Defaults
-    print("\n  Step 6: Defaults\n")
+    logger.info("\n  Step 6: Defaults\n")
     try:
         policy = input("    Default policy [test_first]: ").strip() or "test_first"
         budget = input("    Budget per task USD [2.00]: ").strip() or "2.00"
@@ -121,23 +124,23 @@ def setup_wizard():
     config["defaults"]["budget_per_task"] = float(budget)
 
     # Save config
-    with open(CONFIG_FILE, 'w') as f:
+    with open(CONFIG_FILE, 'w', encoding="utf-8") as f:
         try:
             import yaml
             yaml.dump(config, f, default_flow_style=False)
         except ImportError:
             json.dump(config, f, indent=2)
-    print(f"\n  Config saved: {CONFIG_FILE}")
+    logger.info(f"\n  Config saved: {CONFIG_FILE}")
 
     # Summary
     active = [k for k, v in selected.items() if v]
-    print(f"\n  ======================================")
-    print(f"   Setup Complete!")
-    print(f"  ======================================")
-    print(f"  Active integrations: {', '.join(active)}")
-    print(f"  Config: {CONFIG_FILE}")
-    print(f"\n  Start NEXUS: cognicore ui")
-    print(f"  Webhook URL: http://localhost:7842/webhooks/github")
+    logger.info(f"\n  ======================================")
+    logger.info(f"   Setup Complete!")
+    logger.info(f"  ======================================")
+    logger.info(f"  Active integrations: {', '.join(active)}")
+    logger.info(f"  Config: {CONFIG_FILE}")
+    logger.info(f"\n  Start NEXUS: cognicore ui")
+    logger.info(f"  Webhook URL: http://localhost:7842/webhooks/github")
     print()
 
     return config
@@ -145,7 +148,7 @@ def setup_wizard():
 
 def test_connections():
     """Test all configured integration connections."""
-    print("\n  Testing integrations...\n")
+    logger.info("\n  Testing integrations...\n")
     results = {}
 
     # GitHub
@@ -185,7 +188,7 @@ def test_connections():
 
     for name, status in results.items():
         icon = "OK" if "Connected" in status or "OK" in status else "!!"
-        print(f"    [{icon}] {name}: {status}")
+        logger.info(f"    [{icon}] {name}: {status}")
     print()
     return results
 

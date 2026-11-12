@@ -24,6 +24,9 @@ from cognicore.nexus.agents import (
 from cognicore.nexus.coordinator import CoordinationBus
 from cognicore.nexus.token_tracker import TokenTracker
 from cognicore.nexus.trajectory_store import TrajectoryStore, Trajectory
+import logging
+logger = logging.getLogger("cognicore.nexus.run")
+
 
 SESSION = uuid.uuid4().hex[:8]
 
@@ -31,7 +34,7 @@ def cprint(tag, msg, color="37"):
     COLORS = {"OK":"32","FAIL":"31","AGENT":"36","BUS":"35",
               "TOKEN":"33","INFO":"37","POLICY":"94","RESULT":"32"}
     c = COLORS.get(tag, color)
-    print(f"  \033[{c}m[{tag}]\033[0m {msg}")
+    logger.info(f"  \033[{c}m[{tag}]\033[0m {msg}")
 
 
 def build_registry(runtime=None, persistent=None, isolated=False, use_llm=False):
@@ -76,11 +79,11 @@ def run_nexus(policy="standard", max_attempts=5, isolated=False, quiet=False,
     solved = 0
 
     if not quiet:
-        print(f"\n{'='*72}")
-        print(f"  NEXUS — Multi-Agent Autonomous SWE Benchmark")
-        print(f"  Session: {SESSION} | Policy: {policy} | Tasks: {len(tasks)}")
-        print(f"  Agents: {', '.join(a.role.value for a in registry.all())}")
-        print(f"{'='*72}\n")
+        logger.info(f"\n{'='*72}")
+        logger.info(f"  NEXUS — Multi-Agent Autonomous SWE Benchmark")
+        logger.info(f"  Session: {SESSION} | Policy: {policy} | Tasks: {len(tasks)}")
+        logger.info(f"  Agents: {', '.join(a.role.value for a in registry.all())}")
+        logger.info(f"{'='*72}\n")
 
     for task in tasks:
         ctx = AgentContext(
@@ -140,23 +143,23 @@ def run_nexus(policy="standard", max_attempts=5, isolated=False, quiet=False,
         if not quiet:
             status = "\033[32mPASS\033[0m" if success else "\033[31mFAIL\033[0m"
             agents_used = [e.role.value[0].upper() for e in events]
-            print(f"  {task.id:<18} {status}  A{ctx.attempt}  "
+            logger.info(f"  {task.id:<18} {status}  A{ctx.attempt}  "
                   f"{'→'.join(agents_used)}  {elapsed_ms}ms")
 
     # ── REPORT ──
     total = len(tasks)
     task_tokens = tracker.per_task()
 
-    print(f"\n{'='*72}")
-    print(f"  NEXUS RESULTS — {policy} policy")
-    print(f"{'='*72}")
-    print(f"  Solved: {solved}/{total} ({100*solved/total:.1f}%)")
-    print(f"  Total agent calls: {sum(r['agents_called'] for r in results)}")
-    print(f"\n  Token Usage:")
-    print(f"  {tracker.summary()}")
-    print(f"\n  Agent Stats:")
+    logger.info(f"\n{'='*72}")
+    logger.info(f"  NEXUS RESULTS — {policy} policy")
+    logger.info(f"{'='*72}")
+    logger.info(f"  Solved: {solved}/{total} ({100*solved/total:.1f}%)")
+    logger.info(f"  Total agent calls: {sum(r['agents_called'] for r in results)}")
+    logger.info(f"\n  Token Usage:")
+    logger.info(f"  {tracker.summary()}")
+    logger.info(f"\n  Agent Stats:")
     for role, stats in registry.stats().items():
-        print(f"    {role:<12} {stats['calls']:>3} calls  {stats['tokens']:>8,} tokens  {stats['model']}")
+        logger.info(f"    {role:<12} {stats['calls']:>3} calls  {stats['tokens']:>8,} tokens  {stats['model']}")
 
     # Per-category breakdown
     cats = {}
@@ -167,12 +170,12 @@ def run_nexus(policy="standard", max_attempts=5, isolated=False, quiet=False,
         cats[c]["total"] += 1
         cats[c]["solved"] += int(r["solved"])
 
-    print(f"\n  Category Breakdown:")
+    logger.info(f"\n  Category Breakdown:")
     for cat, s in sorted(cats.items()):
         bar = "█" * s["solved"] + "░" * (s["total"] - s["solved"])
-        print(f"    {cat:<18} {bar} {s['solved']}/{s['total']}")
-    print(f"\n  Trajectory Store: {traj_store.get_stats()['total_trajectories']} trajectories")
-    print(f"{'='*72}\n")
+        logger.info(f"    {cat:<18} {bar} {s['solved']}/{s['total']}")
+    logger.info(f"\n  Trajectory Store: {traj_store.get_stats()['total_trajectories']} trajectories")
+    logger.info(f"{'='*72}\n")
 
     return {"policy": policy, "solved": solved, "total": total, "results": results,
             "token_total": tracker.total_tokens, "cost_total": tracker.total_cost}
@@ -180,9 +183,9 @@ def run_nexus(policy="standard", max_attempts=5, isolated=False, quiet=False,
 
 def compare_policies(max_attempts=5, use_llm=False):
     """Compare all routing policies head-to-head."""
-    print(f"\n{'='*72}")
-    print(f"  NEXUS POLICY COMPARISON")
-    print(f"{'='*72}\n")
+    logger.info(f"\n{'='*72}")
+    logger.info(f"  NEXUS POLICY COMPARISON")
+    logger.info(f"{'='*72}\n")
 
     all_results = {}
     for policy in ["minimal", "standard", "test_first", "review_first"]:
@@ -191,19 +194,19 @@ def compare_policies(max_attempts=5, use_llm=False):
         r = run_nexus(policy=policy, max_attempts=max_attempts, quiet=True,
                       use_llm=use_llm)
         all_results[policy] = r
-        print(f"  {policy:<15} solved={r['solved']}/{r['total']}  "
+        logger.info(f"  {policy:<15} solved={r['solved']}/{r['total']}  "
               f"tokens={r['token_total']:>8,}  cost=${r['cost_total']:.4f}")
 
-    print(f"\n  {'Policy':<15} {'Solve%':>7} {'Tokens':>10} {'Cost':>8} {'Calls':>7}")
-    print(f"  {'-'*50}")
+    logger.info(f"\n  {'Policy':<15} {'Solve%':>7} {'Tokens':>10} {'Cost':>8} {'Calls':>7}")
+    logger.info(f"  {'-'*50}")
     for p, r in all_results.items():
         pct = 100 * r["solved"] / r["total"]
         calls = sum(x["agents_called"] for x in r["results"])
-        print(f"  {p:<15} {pct:>6.1f}% {r['token_total']:>10,} ${r['cost_total']:>7.4f} {calls:>7}")
+        logger.info(f"  {p:<15} {pct:>6.1f}% {r['token_total']:>10,} ${r['cost_total']:>7.4f} {calls:>7}")
 
     best = max(all_results.items(), key=lambda x: x[1]["solved"])
-    print(f"\n  Best policy: {best[0]} ({best[1]['solved']}/{best[1]['total']} solved)")
-    print(f"{'='*72}\n")
+    logger.info(f"\n  Best policy: {best[0]} ({best[1]['solved']}/{best[1]['total']} solved)")
+    logger.info(f"{'='*72}\n")
 
 
 if __name__ == "__main__":

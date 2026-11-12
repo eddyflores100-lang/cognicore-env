@@ -72,7 +72,7 @@ class MemoryState(str, Enum):
     VERIFIED = "verified"         # Independent verification attached
     PROMOTED = "promoted"         # Approved for broader use
     TRANSFERABLE = "transferable" # Ready for cross-agent/cross-repo transfer
-    
+
     # Legacy / Utility states
     CANDIDATE = "candidate"
     ACTIVE = "active"
