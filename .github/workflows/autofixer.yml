@@ -10,7 +10,7 @@ name: 🔧 AutoFixer Bot — Automatic Issue Solver
 
 on:
   schedule:
-    - cron: '0 0 * * 0'  # Every hour
+    - cron: '0 0 * * 0'  # Every Sunday 00:00 UTC
   workflow_dispatch:  # Manual trigger
   issues:
     types: [labeled]  # Trigger when issue gets 'autofix' label
@@ -201,7 +201,9 @@ jobs:
             const timestamp = new Date().toISOString().split('T')[0];
 
             try {
-              // Create branch and commit
+              // Create branch and commit (identity needed on runners since 2023)
+              execSync('git config user.name "autofixer-bot"');
+              execSync('git config user.email "autofixer-bot@users.noreply.github.com"');
               execSync(`git checkout -b ${branch}`);
               execSync('git add -A');
               execSync(`git commit -m "fix(autobot): ${data.total_fixes} automatic fixes across ${data.files_changed} files"`);
