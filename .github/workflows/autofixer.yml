@@ -131,14 +131,23 @@ jobs:
                       file_fixes.append("trailing whitespace removed")
 
                   # ─── FIX 4: missing encoding in open() ───
+                  # v1.1: skip calls that already have encoding= and calls with
+                  # nested parens (previous regex duplicated the kwarg and broke
+                  # nested calls, causing SyntaxError in the verify step).
+                  def _add_encoding(m):
+                      inner = m.group(1)
+                      if 'encoding=' in inner or '(' in inner:
+                          return m.group(0)
+                      return 'open(%s, encoding="utf-8") ' % inner
+
                   new_content = re.sub(
                       r'open\(([^)]+)\)\s*(?=as\b)',
-                      r'open(\1, encoding="utf-8") ',
+                      _add_encoding,
                       content,
                   )
                   if new_content != content:
                       content = new_content
-                      file_fixes.append("added encoding='utf-8' to open()")
+                      file_fixes.append("added encoding='utf-8' to open() (guarded)")
 
                   # ─── Write if changed ───
                   if content != original:
