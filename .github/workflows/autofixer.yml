@@ -140,8 +140,10 @@ jobs:
                           return m.group(0)
                       return 'open(%s, encoding="utf-8") ' % inner
 
+                  # v1.2: lookbehind evita metodos .open() ajenos
+                  # (ZipFile.open/gzip.open no aceptan encoding)
                   new_content = re.sub(
-                      r'open\(([^)]+)\)\s*(?=as\b)',
+                      r'(?<![\w.])open\(([^)]+)\)\s*(?=as\b)',
                       _add_encoding,
                       content,
                   )
@@ -149,8 +151,13 @@ jobs:
                       content = new_content
                       file_fixes.append("added encoding='utf-8' to open() (guarded)")
 
-                  # ─── Write if changed ───
+                  # ─── Write if changed (v1.2: compile-guard, revert seguro) ───
                   if content != original:
+                      try:
+                          compile(content, rel, "exec")
+                      except SyntaxError as e:
+                          print(f"  REVERTED {rel}: transform broke syntax ({e})")
+                          continue
                       with open(path, "w", encoding="utf-8") as f:
                           f.write(content)
                       files_changed.add(rel)
