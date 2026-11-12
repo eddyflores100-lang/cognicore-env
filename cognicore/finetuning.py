@@ -100,7 +100,7 @@ def export_jsonl(episodes: list, output_path: str, system_prompt: str = "") -> i
     Returns number of examples exported.
     """
     count = 0
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         for ep in episodes:
             for step in ep["steps"]:
                 if not step["correct"]:
@@ -145,7 +145,7 @@ def export_dpo(episodes: list, output_path: str) -> int:
 
     # Create pairs
     count = 0
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         for correct in correct_steps:
             for incorrect in incorrect_steps:
                 pair = {
@@ -172,7 +172,7 @@ def export_reward_dataset(episodes: list, output_path: str) -> int:
     Returns number of examples exported.
     """
     count = 0
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         for ep in episodes:
             for step in ep["steps"]:
                 entry = {

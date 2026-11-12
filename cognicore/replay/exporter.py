@@ -24,7 +24,7 @@ class TrajectoryExporter:
         path.parent.mkdir(parents=True, exist_ok=True)
         count = 0
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             for tid in task_ids:
                 events = self.store.load_events(tid)
                 for e in events:
@@ -48,7 +48,7 @@ class TrajectoryExporter:
         path.parent.mkdir(parents=True, exist_ok=True)
         count = 0
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             for tid in task_ids:
                 events = self.store.load_events(tid)
                 if not events:
@@ -92,7 +92,7 @@ class TrajectoryExporter:
         path.parent.mkdir(parents=True, exist_ok=True)
         count = 0
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             for tid in task_ids:
                 branches = self.store.load_branches(tid)
                 for b in branches:
@@ -116,7 +116,7 @@ class TrajectoryExporter:
         path.parent.mkdir(parents=True, exist_ok=True)
         count = 0
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             for tid in task_ids:
                 events = self.store.load_events(tid)
                 for i in range(len(events) - 1):

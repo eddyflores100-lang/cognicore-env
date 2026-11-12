@@ -68,9 +68,9 @@ class ConflictResolver:
             has_contradiction = False
             for att_a in experience.attempts:
                 for att_b in candidate.attempts:
-                    if (att_a.approach == att_b.approach and 
-                        att_a.outcome != AttemptOutcome.UNKNOWN.value and 
-                        att_b.outcome != AttemptOutcome.UNKNOWN.value and 
+                    if (att_a.approach == att_b.approach and
+                        att_a.outcome != AttemptOutcome.UNKNOWN.value and
+                        att_b.outcome != AttemptOutcome.UNKNOWN.value and
                         att_a.outcome != att_b.outcome):
                         has_contradiction = True
                         break

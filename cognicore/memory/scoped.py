@@ -42,7 +42,7 @@ class ScopedMemoryBackend(MemoryBackend):
         # Note: this is a heuristic count since filtering the whole backend might be slow.
         # But we'll just do it anyway.
         # This is an optional feature.
-        return len([1 for e in self.backend.get_by_category("general", top_k=999999) 
+        return len([1 for e in self.backend.get_by_category("general", top_k=999999)
                     if e.scope == self.scope and e.scope_id == self.scope_id])
 
     def clear(self) -> None:

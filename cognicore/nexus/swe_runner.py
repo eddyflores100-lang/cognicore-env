@@ -19,6 +19,9 @@ import traceback
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Optional, Callable
 from pathlib import Path
+import logging
+logger = logging.getLogger("cognicore.nexus.swe_runner")
+
 
 
 @dataclass
@@ -90,22 +93,22 @@ class SWEBenchResults:
     def print_report(self):
         self.compute()
         w = 60
-        print("\n" + "=" * w)
-        print("  NEXUS SWE-bench Results")
-        print("=" * w)
-        print(f"  Mode:         {self.mode}")
-        print(f"  Resolved:     {self.solved}/{self.total} ({self.resolve_rate:.1%})")
-        print(f"  Duration:     {self.total_duration:.1f}s")
-        print(f"  Tokens:       {self.total_tokens:,}")
-        print(f"  Cost:         ${self.total_cost:.4f}")
-        print("-" * w)
+        logger.info("\n" + "=" * w)
+        logger.info("  NEXUS SWE-bench Results")
+        logger.info("=" * w)
+        logger.info(f"  Mode:         {self.mode}")
+        logger.info(f"  Resolved:     {self.solved}/{self.total} ({self.resolve_rate:.1%})")
+        logger.info(f"  Duration:     {self.total_duration:.1f}s")
+        logger.info(f"  Tokens:       {self.total_tokens:,}")
+        logger.info(f"  Cost:         ${self.total_cost:.4f}")
+        logger.info("-" * w)
         for r in self.results:
             status = "PASS" if r.solved else "FAIL"
             icon = "+" if r.solved else "-"
             att = f"A{r.attempts}"
             model = r.model[:25] if r.model else ""
-            print(f"  [{icon}] {r.instance_id[:30]:<30s}  {status}  {att}  {model}")
-        print("=" * w + "\n")
+            logger.info(f"  [{icon}] {r.instance_id[:30]:<30s}  {status}  {att}  {model}")
+        logger.info("=" * w + "\n")
 
 
 class NexusSWERunner:
@@ -148,18 +151,18 @@ class NexusSWERunner:
             tasks = [t for t in tasks if t.id in task_ids]
 
         results = SWEBenchResults(mode="mini")
-        print(f"\n  NEXUS Mini-Bench: {len(tasks)} tasks, {self.max_attempts} attempts each")
-        print(f"  LLM: {'MultiLLM' if self._llm else 'rule-based only'}\n")
+        logger.info(f"\n  NEXUS Mini-Bench: {len(tasks)} tasks, {self.max_attempts} attempts each")
+        logger.info(f"  LLM: {'MultiLLM' if self._llm else 'rule-based only'}\n")
 
         for i, task in enumerate(tasks, 1):
             self._emit(task.id, "swe", "task_start",
                        f"[{i}/{len(tasks)}] {task.id}: {task.issue[:60]}")
-            print(f"  [{i}/{len(tasks)}] {task.id}: {task.issue[:50]}...", end=" ", flush=True)
+            logger.info(f"  [{i}/{len(tasks)}] {task.id}: {task.issue[:50]}...", end=" ", flush=True)
             result = self._run_mini_task(task)
             results.results.append(result)
             icon = "PASS" if result.solved else "FAIL"
             model = result.model[:20] if result.model else "rule"
-            print(f"{icon} (A{result.attempts}, {result.duration:.1f}s, {model})")
+            logger.info(f"{icon} (A{result.attempts}, {result.duration:.1f}s, {model})")
 
         results.print_report()
         return results
@@ -237,7 +240,7 @@ class NexusSWERunner:
                 code = self._strip_fences(resp)
                 return code
             except Exception as e:
-                print(f" [LLM err: {str(e)[:50]}]", end="")
+                logger.info(f" [LLM err: {str(e)[:50]}]", end="")
 
         # Fallback: try rule-based from FIXES db
         try:
@@ -303,22 +306,22 @@ class NexusSWERunner:
         """Run official SWE-bench Lite tasks from HuggingFace."""
         tasks = self._load_swebench_lite(limit, split)
         if not tasks:
-            print("  ERROR: Could not load SWE-bench Lite. Install: pip install datasets")
+            logger.info("  ERROR: Could not load SWE-bench Lite. Install: pip install datasets")
             return SWEBenchResults(mode="lite")
 
         results = SWEBenchResults(mode="lite")
-        print(f"\n  NEXUS SWE-bench Lite: {len(tasks)} tasks")
-        print(f"  LLM: {'MultiLLM' if self._llm else 'NONE - will fail'}\n")
+        logger.info(f"\n  NEXUS SWE-bench Lite: {len(tasks)} tasks")
+        logger.info(f"  LLM: {'MultiLLM' if self._llm else 'NONE - will fail'}\n")
 
         for i, task in enumerate(tasks, 1):
             iid = task["instance_id"]
             desc = task.get("problem_statement", "")[:60]
-            print(f"  [{i}/{len(tasks)}] {iid}: {desc}...", end=" ", flush=True)
+            logger.info(f"  [{i}/{len(tasks)}] {iid}: {desc}...", end=" ", flush=True)
             self._emit(iid, "swe", "task_start", f"[{i}/{len(tasks)}] {iid}")
             result = self._run_lite_task(task)
             results.results.append(result)
             icon = "PASS" if result.solved else "FAIL"
-            print(f"{icon} ({result.duration:.1f}s)")
+            logger.info(f"{icon} ({result.duration:.1f}s)")
 
         results.print_report()
         return results
@@ -330,10 +333,10 @@ class NexusSWERunner:
             ds = load_dataset("princeton-nlp/SWE-bench_Lite", split=split)  # nosec B615
             return list(ds.select(range(min(limit, len(ds)))))
         except ImportError:
-            print("  Install datasets: pip install datasets")
+            logger.info("  Install datasets: pip install datasets")
             return []
         except Exception as e:
-            print(f"  HuggingFace error: {e}")
+            logger.info(f"  HuggingFace error: {e}")
             return []
 
     def _run_lite_task(self, task) -> SWEResult:
@@ -441,7 +444,7 @@ def main():
         if a.export:
             ep = a.export if a.mode == "mini" else a.export.replace(".jsonl", "_mini.jsonl")
             results.export_predictions(ep, a.model_name)
-            print(f"  Exported: {ep}")
+            logger.info(f"  Exported: {ep}")
 
     if a.mode in ("lite", "both"):
         results = runner.run_swebench_lite(limit=a.limit)
@@ -449,7 +452,7 @@ def main():
         if a.export:
             ep = a.export if a.mode == "lite" else a.export.replace(".jsonl", "_lite.jsonl")
             results.export_predictions(ep, a.model_name)
-            print(f"  Exported: {ep}")
+            logger.info(f"  Exported: {ep}")
 
     # Save JSON results
     out_dir = Path(__file__).parent.parent.parent / "experiments"
@@ -457,9 +460,9 @@ def main():
     for r in all_results:
         r.compute()
         out_path = out_dir / f"swe_results_{r.mode}_{int(time.time())}.json"
-        with open(out_path, "w") as f:
+        with open(out_path, "w", encoding="utf-8") as f:
             json.dump(r.to_dict(), f, indent=2)
-        print(f"  Results: {out_path}")
+        logger.info(f"  Results: {out_path}")
 
 
 if __name__ == "__main__":

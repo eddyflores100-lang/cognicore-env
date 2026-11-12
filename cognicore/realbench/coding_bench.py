@@ -291,26 +291,26 @@ def make_evaluator(task: dict):
 
 def simple_code_fixer(task_data: dict, context: dict) -> str:
     """A real code fixing agent that uses CogniCore context.
-    
+
     This agent applies pattern-based fixes. With CogniCore memory,
     it learns which fix patterns work for which bug categories.
     """
     buggy = task_data["buggy_code"]
     category = task_data.get("category", "")
     hint = task_data.get("fix_hint", "")
-    
+
     # Check CogniCore context for past failures
     failures_to_avoid = context.get("failures_to_avoid", [])
     successful_patterns = context.get("successful_patterns", [])
     reflection_hint = context.get("reflection_hint", "")
-    
+
     # Apply known fixes based on category + learned patterns
     fixed = buggy
-    
+
     if category == "off_by_one":
         if "range(len(" in fixed and "-1)" not in fixed:
             fixed = fixed.replace("range(len(lst))", "range(len(lst)-1)")
-    
+
     elif category == "missing_return":
         # Add return statement at end
         lines = fixed.rstrip().split("\n")
@@ -318,31 +318,31 @@ def simple_code_fixer(task_data: dict, context: dict) -> str:
         if not any("return max_val" in l for l in lines):
             lines.append(f"{indent}return max_val")
         fixed = "\n".join(lines)
-    
+
     elif category == "mutable_default":
         if "lst=[]" in fixed:
             fixed = fixed.replace("lst=[]", "lst=None")
-            fixed = fixed.replace("lst.append(item)", 
+            fixed = fixed.replace("lst.append(item)",
                                    "if lst is None:\n        lst = []\n    lst.append(item)")
-    
+
     elif category == "key_error":
         if "users[user_id]" in fixed:
             fixed = fixed.replace(
                 "return users[user_id]['email']",
                 "user = users.get(user_id)\n    if user is None:\n        return None\n    return user.get('email')"
             )
-    
+
     elif category == "performance":
         # Already correct functionally, just verify it passes
         pass
-    
+
     elif category == "zero_division":
         if "return total / len(numbers)" in fixed:
             fixed = fixed.replace(
                 "return total / len(numbers)",
                 "if not numbers:\n        return 0.0\n    return total / len(numbers)"
             )
-    
+
     elif category == "type_error":
         fixed = """
 def safe_max(a, b):
@@ -356,11 +356,11 @@ def safe_max(a, b):
         return a
     return b
 """
-    
+
     elif category == "resource_leak":
         fixed = """
 def read_config(path):
-    with open(path, 'r') as f:
+    with open(path, 'r', encoding="utf-8") as f:
         data = f.read()
     config = {}
     for line in data.strip().split('\\n'):
@@ -369,7 +369,7 @@ def read_config(path):
             config[key.strip()] = val.strip()
     return config
 """
-    
+
     elif category == "shallow_copy":
         fixed = """
 import copy
@@ -378,10 +378,13 @@ def duplicate_and_modify(original):
     c['settings']['theme'] = 'dark'
     return c
 """
-    
+
     elif category == "concurrency":
         fixed = """
 import threading
+import logging
+logger = logging.getLogger("cognicore.realbench.coding_bench")
+
 class Counter:
     def __init__(self):
         self.value = 0
@@ -390,7 +393,7 @@ class Counter:
         with self._lock:
             self.value += 1
 """
-    
+
     return fixed
 
 
@@ -401,7 +404,7 @@ def naive_code_fixer(task_data: dict, context: dict) -> str:
     """
     buggy = task_data["buggy_code"]
     category = task_data.get("category", "")
-    
+
     # Naive fixes — some work, most don't
     if category == "off_by_one":
         return buggy  # Doesn't fix it
@@ -422,7 +425,7 @@ def naive_code_fixer(task_data: dict, context: dict) -> str:
         return buggy  # Doesn't deepcopy
     elif category == "concurrency":
         return buggy  # Doesn't add lock
-    
+
     return buggy
 
 
@@ -456,7 +459,7 @@ class CodingBenchmark:
 
     def run(self, agent_fn=None, verbose=True) -> "BenchmarkResult":
         """Run the coding benchmark.
-        
+
         Uses the smart code fixer by default. Override with agent_fn
         to test your own agent.
         """

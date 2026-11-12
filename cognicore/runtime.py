@@ -61,7 +61,7 @@ class RuntimeConfig:
     persistence_path: Optional[str] = None
     auto_save: bool = True
     verbose: bool = False
-    
+
     # Phase 0/1/3 Additions
     memory_backend: Optional[str] = "tfidf"  # "tfidf", "sqlite", "embeddings"
     embedding_provider: Optional[str] = None
@@ -178,7 +178,7 @@ class CogniCoreRuntime:
                 max_size=self.config.memory_max_size,
                 persistence_path=self.config.persistence_path
             )
-            
+
         self.memory = MemoryLifecycleManager(backend=self.backend)
 
         self.reflection = ReflectionEngine(
@@ -309,7 +309,7 @@ class CogniCoreRuntime:
                 scope_val = MemoryScope(self.config.memory_scope)
             except ValueError:
                 pass
-                
+
             entry = MemoryEntry(
                 text=str(task)[:200],
                 category=category,
@@ -488,19 +488,19 @@ class CogniCoreRuntime:
         min_confidence: float = 0.0,
     ) -> Dict[str, Any]:
         """Share this runtime's memories with another runtime.
-        
+
         Directly transfers knowledge between two CogniCoreRuntime instances
         running in the same process. No marketplace or API calls needed.
-        
+
         Args:
             target: The CogniCoreRuntime to share memories WITH.
             category: Only share this category (empty = all).
             memory_type: Filter: 'episodic', 'semantic', 'procedural', or 'all'.
             min_confidence: Minimum confidence threshold.
-            
+
         Returns:
             Dict with transfer results.
-            
+
         Example:
             >>> agent_a = CogniCoreRuntime(name="veteran")
             >>> agent_b = CogniCoreRuntime(name="rookie")
@@ -526,18 +526,18 @@ class CogniCoreRuntime:
         min_confidence: float = 0.0,
     ) -> Dict[str, Any]:
         """Receive memories from another runtime.
-        
+
         Inverse of share_memories — pull knowledge from a source agent.
-        
+
         Args:
             source: The CogniCoreRuntime to receive memories FROM.
             category: Only receive this category (empty = all).
             memory_type: Filter: 'episodic', 'semantic', 'procedural', or 'all'.
             min_confidence: Minimum confidence threshold.
-            
+
         Returns:
             Dict with transfer results.
-            
+
         Example:
             >>> rookie.receive_memories(veteran, category="django")
         """

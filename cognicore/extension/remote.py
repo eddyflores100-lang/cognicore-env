@@ -87,7 +87,7 @@ def get_user_id(request_obj) -> str:
     token = None
     anthropic_client = None
     debug_logs = []
-    
+
     # If it's a Starlette Request
     if hasattr(request_obj, "headers"):
         debug_logs.append("Has headers attribute")
@@ -97,7 +97,7 @@ def get_user_id(request_obj) -> str:
             token = auth[7:].strip()
         elif request_obj.query_params:
             token = request_obj.query_params.get("token")
-            
+
     # If it's an MCP RequestContext
     else:
         debug_logs.append("No headers attribute (MCP context)")
@@ -112,7 +112,7 @@ def get_user_id(request_obj) -> str:
                     token = auth[7:].strip()
         else:
             debug_logs.append("No starlette_req")
-        
+
         if not token and hasattr(request_obj, "meta") and request_obj.meta:
             # Meta may be a Pydantic model, dataclass, or dict — normalize to dict
             meta = request_obj.meta
@@ -132,16 +132,16 @@ def get_user_id(request_obj) -> str:
     # This unsigned header is only supported for explicitly enabled local
     # development. It must never be trusted as production authentication.
     if not token and anthropic_client and INSECURE_AUTH_ENABLED:
-        print(f"[AUTH] Accepting x-anthropic-client header: {anthropic_client[:40]}")
+        logger.info(f"[AUTH] Accepting x-anthropic-client header: {anthropic_client[:40]}")
         return f"claude_client_{hashlib.sha256(anthropic_client.encode()).hexdigest()[:16]}"
 
     if not token:
-        print(f"[DEBUG] get_user_id failed to find token. Logs: {' | '.join(debug_logs)}")
+        logger.info(f"[DEBUG] get_user_id failed to find token. Logs: {' | '.join(debug_logs)}")
         raise HTTPException(
             status_code=401,
             detail=f"Missing or invalid authentication credentials in get_user_id. Debug: {' | '.join(debug_logs)}",
         )
-        
+
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id = payload.get("sub")
@@ -170,11 +170,11 @@ def _get_shared_provider():
             try:
                 from cognicore.memory.providers.sentence_transformers import SentenceTransformerProvider
                 _shared_provider = SentenceTransformerProvider()
-                print("[SEMANTIC] Enabled SentenceTransformerProvider in remote server")
+                logger.info("[SEMANTIC] Enabled SentenceTransformerProvider in remote server")
             except ImportError:
-                print("[SEMANTIC] sentence-transformers not installed, using BM25 FTS5 only")
+                logger.info("[SEMANTIC] sentence-transformers not installed, using BM25 FTS5 only")
             except Exception as e:
-                print(f"[SEMANTIC] Failed to initialize SentenceTransformerProvider: {e}")
+                logger.info(f"[SEMANTIC] Failed to initialize SentenceTransformerProvider: {e}")
     return _shared_provider
 
 def get_backend(ctx: Optional[Context] = None):
@@ -265,14 +265,14 @@ def apply_auto_compression(ctx: Context, conversation: Optional[list], current_r
     """Check token count and automatically compress if over 150,000 tokens."""
     if not conversation or not isinstance(conversation, list):
         return current_response
-        
+
     total_tokens = TokenBudget.estimate_tokens(conversation)
-    
+
     if total_tokens > 150_000:
         backend = get_backend(ctx)
         # Keep recent 20%, compress oldest 80%
         keep_last_n = max(1, int(len(conversation) * 0.2))
-        
+
         # This handles compression AND storing to SQLite (via compress_context)
         compressed_json = compress_context(backend, conversation, keep_last_n=keep_last_n)
         try:
@@ -280,7 +280,7 @@ def apply_auto_compression(ctx: Context, conversation: Optional[list], current_r
             summary = data.get("summary", compressed_json)
         except Exception:
             summary = compressed_json
-            
+
         signal = (
             "Context compressed. \n"
             "Summary of previous discussion attached.\n"
@@ -290,7 +290,7 @@ def apply_auto_compression(ctx: Context, conversation: Optional[list], current_r
             "--------------------------\n\n"
         )
         return signal + current_response
-        
+
     return current_response
 
 import time as _time
@@ -409,23 +409,23 @@ def cognicore_list(ctx: Context, limit: int = 10, category: str = "", scope: str
 def cognicore_stats(ctx: Context, conversation: Optional[list] = None) -> str:
     """Memory statistics: count, categories, uptime, storage."""
     backend = get_backend(ctx)
-    
+
     # Get all memories for category breakdown
     all_results = backend.search(query="", top_k=10000, scope=MemoryScope.USER)
     total = len(all_results)
-    
+
     # Category breakdown
     cat_counts = {}
     for r in all_results:
         cat = r.entry.category or "general"
         cat_counts[cat] = cat_counts.get(cat, 0) + 1
-    
+
     # Uptime
     uptime_s = int(_time.time() - _server_start_time)
     hours, remainder = divmod(uptime_s, 3600)
     minutes, seconds = divmod(remainder, 60)
     uptime_str = f"{hours}h {minutes}m {seconds}s"
-    
+
     lines = [
         f"Total memories: {total}",
         f"Uptime: {uptime_str}",
@@ -433,7 +433,7 @@ def cognicore_stats(ctx: Context, conversation: Optional[list] = None) -> str:
     ]
     for cat, count in sorted(cat_counts.items(), key=lambda x: -x[1]):
         lines.append(f"  {cat}: {count}")
-    
+
     res = "\n".join(lines)
     return apply_auto_compression(ctx, conversation, res)
 
@@ -634,16 +634,16 @@ def cognicore_fabric_recommend(
     backend = _get_backend()
     fabric = get_fabric(backend)
     register_all_plugins(fabric)
-    
+
     # We allow the caller (e.g., Claude) to act as a generic "claude" or "cursor" tool
     adapter = fabric.connect(tool_name) if tool_name in fabric._adapters else None
-    
+
     if adapter:
         rec = adapter.recommend(task=task)
     else:
         # If no adapter exists, just ask the fabric engine directly
         rec = fabric.translate_for_tool(tool_name, {"task": task})
-        
+
     result = {
         "tool": tool_name,
         "recommendations": rec,
@@ -663,14 +663,14 @@ def cognicore_fabric_sync_figma(
     backend = _get_backend()
     fabric = get_fabric(backend)
     register_all_plugins(fabric)
-    
+
     try:
         figma = fabric.connect("figma")
         success = figma.sync_file(file_key, token)
         result = {"success": success, "message": f"Successfully pulled design semantics for {file_key}"}
     except Exception as e:
         result = {"success": False, "error": str(e)}
-        
+
     return apply_auto_compression(ctx, conversation, json.dumps(result, indent=2))
 
 # --- ElevenLabs Integration ---
@@ -1261,7 +1261,7 @@ class StreamingHeadersMiddleware:
                     if k.lower() == b"content-type" and b"text/event-stream" in v:
                         is_sse = True
                         break
-                
+
                 if is_sse:
                     new_headers = []
                     for k, v in headers:
@@ -1281,7 +1281,7 @@ class AuthMiddleware:
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
-            
+
         path = scope.get("path", "")
         # FastMCP's SSE transport can expose both the mounted /mcp routes and
         # root-level transport paths. Protect every form so a mount change
@@ -1295,11 +1295,11 @@ class AuthMiddleware:
             # Allow OPTIONS for CORS
             if scope.get("method") == "OPTIONS":
                 return await self.app(scope, receive, send)
-                
+
             headers = dict(scope.get("headers", []))
             auth = headers.get(b"authorization", b"").decode("utf-8")
             query = scope.get("query_string", b"").decode("utf-8")
-            
+
             token = None
             anthropic_client = headers.get(b"x-anthropic-client", b"").decode("utf-8")
             if auth and auth.lower().startswith("bearer "):
@@ -1309,11 +1309,11 @@ class AuthMiddleware:
                 parsed = parse_qs(query)
                 if "token" in parsed:
                     token = parsed["token"][0]
-            
+
             if not token and anthropic_client and INSECURE_AUTH_ENABLED:
-                print(f"[AUTH] Middleware: accepting x-anthropic-client: {anthropic_client[:40]}")
+                logger.info(f"[AUTH] Middleware: accepting x-anthropic-client: {anthropic_client[:40]}")
                 return await self.app(scope, receive, send)
-                    
+
             if not token:
                 async def send_wrapper(message):
                     if message["type"] == "http.response.start":
@@ -1325,7 +1325,7 @@ class AuthMiddleware:
                             f"Missing or invalid authentication credentials. Received headers: {header_keys}"
                         ).encode("utf-8")
                     await send(message)
-                
+
                 # Mock a 401 response directly
                 await send({"type": "http.response.start", "status": 401, "headers": [(b"content-type", b"text/plain")]})
                 header_keys = ", ".join([k.decode("utf-8") for k in headers.keys()])
@@ -1343,7 +1343,7 @@ class AuthMiddleware:
                 await send({"type": "http.response.start", "status": 401, "headers": [(b"content-type", b"text/plain")]})
                 await send({"type": "http.response.body", "body": f"Invalid JWT: {str(e)}".encode("utf-8")})
                 return
-                
+
         return await self.app(scope, receive, send)
 
 app.add_middleware(AuthMiddleware)
@@ -1390,7 +1390,7 @@ async def register_client(request: Request):
         body = await request.json()
     except Exception:
         body = {}
-    
+
     return {
         "client_id": "cognicore_mock_client",
         "client_secret": "cognicore_mock_secret",
@@ -1419,7 +1419,7 @@ async def token(request: Request):
         "exp": int(time.time()) + 31536000
     }
     access_token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-    
+
     return {
         "access_token": access_token,
         "token_type": "Bearer",
@@ -1647,6 +1647,9 @@ def cognicore_figma_recommend(
 # ── Figma Webhook receiver ────────────────────────────────────────────────────
 
 from fastapi import status as _status
+import logging
+logger = logging.getLogger("cognicore.extension.remote")
+
 
 @app.post("/webhooks/figma", status_code=_status.HTTP_200_OK)
 async def figma_webhook(request: Request):
@@ -1680,7 +1683,7 @@ async def figma_webhook(request: Request):
     exp    = FigmaExperienceAdapter(fabric)
     entry_id = exp.ingest_webhook_event(event)
 
-    print(f"[FigmaWebhook] {event_type} | file='{file_name}' ({file_key}) | id={entry_id}")
+    logger.info(f"[FigmaWebhook] {event_type} | file='{file_name}' ({file_key}) | id={entry_id}")
 
     return {
         "status":   "ok",

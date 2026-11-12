@@ -22,6 +22,9 @@ from cognicore.nexus.trajectory_store import TrajectoryStore
 from cognicore.research.persistent_store import PersistentCognitionStore
 from cognicore.nexus.token_tracker import TokenTracker
 from cognicore.utils.sqlite import connect_sqlite
+import logging
+logger = logging.getLogger("cognicore.ui.server")
+
 
 NEXUS_DIR = Path.home() / ".cognicore"
 NEXUS_DIR.mkdir(exist_ok=True)
@@ -60,7 +63,7 @@ async def watch_events():
     while True:
         try:
             if EVENTS_FILE.exists():
-                with open(EVENTS_FILE, 'r') as f:
+                with open(EVENTS_FILE, 'r', encoding="utf-8") as f:
                     f.seek(last_pos)
                     for line in f:
                         line = line.strip()
@@ -123,7 +126,7 @@ def get_stats():
     # Calculate from trajectories
     try:
         export_path = ts.export_for_training()
-        with open(export_path) as f:
+        with open(export_path, encoding="utf-8") as f:
             for line in f:
                 t = json.loads(line)
                 total_tokens += t.get("total_tokens", 0)
@@ -150,7 +153,7 @@ def get_tasks(status: Optional[str] = None, policy: Optional[str] = None,
     try:
         export_path = ts.export_for_training()
         tasks = []
-        with open(export_path) as f:
+        with open(export_path, encoding="utf-8") as f:
             for line in f:
                 t = json.loads(line)
                 task = {
@@ -179,7 +182,7 @@ def get_task_detail(task_id: str):
     ts = TrajectoryStore()
     try:
         export_path = ts.export_for_training()
-        with open(export_path) as f:
+        with open(export_path, encoding="utf-8") as f:
             for line in f:
                 t = json.loads(line)
                 if t["task_id"] == task_id:
@@ -223,7 +226,7 @@ def get_analytics():
     category_data = {}
     try:
         export_path = ts.export_for_training()
-        with open(export_path) as f:
+        with open(export_path, encoding="utf-8") as f:
             for line in f:
                 t = json.loads(line)
                 cat = t.get("category", "unknown")
@@ -269,7 +272,7 @@ def update_settings(data: dict):
 async def post_event(event: dict):
     """Receive events from cognicore runtime."""
     event["timestamp"] = datetime.utcnow().isoformat()
-    with open(EVENTS_FILE, 'a') as f:
+    with open(EVENTS_FILE, 'a', encoding="utf-8") as f:
         f.write(json.dumps(event) + "\n")
     await manager.broadcast(event)
     return {"ok": True}
@@ -295,9 +298,9 @@ def start_server(port=7842, open_browser=True, host=None):
     """Start the NEXUS dashboard server."""
     import uvicorn
     host = host or os.environ.get("NEXUS_HOST", "127.0.0.1")
-    print(f"\n  ======================================")
-    print(f"   NEXUS Dashboard -- {host}:{port}")
-    print(f"  ======================================\n")
+    logger.info(f"\n  ======================================")
+    logger.info(f"   NEXUS Dashboard -- {host}:{port}")
+    logger.info(f"  ======================================\n")
     if open_browser:
         import threading
         threading.Timer(1.5, lambda: webbrowser.open(f"http://localhost:{port}")).start()

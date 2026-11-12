@@ -84,7 +84,7 @@ class AgentRegistry(CommerceDB):
                     categories=excluded.categories,
                     last_active=excluded.last_active
             """, (agent_id, name, description, cats_json, now, now))
-    
+
     def get(self, agent_id: str) -> Optional[Dict[str, Any]]:
         """Gets an agent's details."""
         with self._get_conn() as conn:
@@ -97,7 +97,7 @@ class AgentRegistry(CommerceDB):
         cats_json = json.dumps(categories)
         with self._get_conn() as conn:
             conn.execute("""
-                UPDATE agent_registry 
+                UPDATE agent_registry
                 SET total_memories = ?, categories = ?, last_active = ?
                 WHERE agent_id = ?
             """, (total_memories, cats_json, now, agent_id))
@@ -111,18 +111,18 @@ class AgentRegistry(CommerceDB):
         """Searches for agents selling memories."""
         sql = "SELECT * FROM agent_registry WHERE for_sale = 1 AND reputation_score >= ?"
         params: List[Any] = [min_reputation]
-        
+
         if query:
             sql += " AND (name LIKE ? OR description LIKE ?)"
             params.extend([f"%{query}%", f"%{query}%"])
-            
+
         if category:
             sql += " AND categories LIKE ?"
             params.append(f'%"{category}"%')
-            
+
         sql += " ORDER BY reputation_score DESC LIMIT ?"
         params.append(top_k)
-        
+
         with self._get_conn() as conn:
             rows = conn.execute(sql, params).fetchall()
             return [dict(row) for row in rows]
@@ -133,22 +133,22 @@ class TransactionLedger(CommerceDB):
         """Records a new transaction."""
         timestamp = datetime.utcnow().isoformat()
         m_ids_json = json.dumps(memory_ids)
-        
+
         raw_str = f"{seller_id}:{buyer_id}:{m_ids_json}:{timestamp}"
         tx_hash = hashlib.sha256(raw_str.encode('utf-8')).hexdigest()
-        
+
         dt_str = datetime.utcnow().strftime("%Y%m%d%H%M%S")
         tx_id = f"txn_{dt_str}_{tx_hash[:6]}"
-        
+
         with self._get_conn() as conn:
             conn.execute("""
                 INSERT INTO transactions (
-                    id, seller_agent_id, buyer_agent_id, memory_ids, memory_type, 
-                    memories_count, price_usd, timestamp, hash, 
+                    id, seller_agent_id, buyer_agent_id, memory_ids, memory_type,
+                    memories_count, price_usd, timestamp, hash,
                     seller_reputation_before, buyer_reputation_before
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (tx_id, seller_id, buyer_id, m_ids_json, memory_type, count, price_usd, timestamp, tx_hash, seller_rep, buyer_rep))
-            
+
         return tx_id
 
     def get_transactions(self, agent_id: str, role: str = 'any') -> List[Dict[str, Any]]:
@@ -164,7 +164,7 @@ class TransactionLedger(CommerceDB):
         else:
             sql += "(seller_agent_id = ? OR buyer_agent_id = ?)"
             params.extend([agent_id, agent_id])
-            
+
         sql += " ORDER BY timestamp DESC"
         with self._get_conn() as conn:
             rows = conn.execute(sql, params).fetchall()
@@ -175,7 +175,7 @@ class TransactionLedger(CommerceDB):
         with self._get_conn() as conn:
             seller_rows = conn.execute("SELECT price_usd FROM transactions WHERE seller_agent_id = ?", (agent_id,)).fetchall()
             buyer_rows = conn.execute("SELECT price_usd FROM transactions WHERE buyer_agent_id = ?", (agent_id,)).fetchall()
-            
+
         return {
             "total_as_seller": len(seller_rows),
             "total_as_buyer": len(buyer_rows),
@@ -189,24 +189,24 @@ class ReputationEngine(CommerceDB):
         """Calculates reputation score 0.0-1.0."""
         with self._get_conn() as conn:
             rows = conn.execute("SELECT price_usd, memories_count FROM transactions WHERE seller_agent_id = ?", (agent_id,)).fetchall()
-            
+
         count = len(rows)
         if count == 0:
             return 0.5
-            
+
         base = min(0.3, math.log10(1 + count) * 0.1)
-        
+
         total_memories = sum(r['memories_count'] for r in rows)
         total_revenue = sum(r['price_usd'] for r in rows)
         avg_price = total_revenue / total_memories if total_memories > 0 else 0
         quality = min(0.4, avg_price * 40)
-        
+
         consistency = 0.0
         if count > 20:
             consistency = 0.3
         elif count > 5:
             consistency = 0.2
-            
+
         total = base + quality + consistency
         return max(0.0, min(1.0, total))
 
@@ -220,19 +220,19 @@ class ReputationEngine(CommerceDB):
         """Gets reputation details."""
         with self._get_conn() as conn:
             rows = conn.execute("SELECT price_usd, memories_count FROM transactions WHERE seller_agent_id = ?", (agent_id,)).fetchall()
-            
+
         count = len(rows)
         score = self.calculate(agent_id)
-        
+
         base_comp = min(0.3, math.log10(1 + count) * 0.1) if count > 0 else 0
-        
+
         total_memories = sum(r['memories_count'] for r in rows)
         total_revenue = sum(r['price_usd'] for r in rows)
         avg_price = total_revenue / total_memories if total_memories > 0 else 0
         quality_comp = min(0.4, avg_price * 40) if count > 0 else 0
-        
+
         consistency_comp = 0.3 if count > 20 else (0.2 if count > 5 else 0.0)
-        
+
         return {
             "score": score,
             "total_transactions": count,
@@ -262,32 +262,32 @@ class PricingEngine:
     def price_memory(self, memory_type: str, confidence: float, reputation: float, category: str) -> float:
         """Calculates price for a single memory."""
         base = self.BASE_PRICES.get(memory_type, 0.01)
-        
+
         rep_mult = 0.5
         for threshold, mult in self.REPUTATION_MULTIPLIERS:
             if reputation >= threshold:
                 rep_mult = mult
                 break
-                
+
         rarity = self.get_rarity(category)
         rarity_mult = self.RARITY_TIERS.get(rarity, 1.0)
-        
+
         return base * rep_mult * rarity_mult * confidence
 
     def value_collection(self, memories: List[Dict[str, Any]], reputation: float) -> Dict[str, Any]:
         """Values a collection of memories."""
         total = 0.0
         breakdown: Dict[str, float] = defaultdict(float)
-        
+
         for m in memories:
             m_type = m.get('memory_type', 'semantic')
             conf = m.get('confidence', 1.0)
             cat = m.get('category', 'general')
-            
+
             val = self.price_memory(m_type, conf, reputation, cat)
             total += val
             breakdown[m_type] += val
-            
+
         return {
             "breakdown_by_type": dict(breakdown),
             "total_value_usd": total

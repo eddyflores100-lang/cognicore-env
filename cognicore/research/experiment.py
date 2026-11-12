@@ -6,6 +6,9 @@ import json, time, os, random
 from dataclasses import dataclass, field, asdict
 from typing import Any, Dict, List, Optional
 from pathlib import Path
+import logging
+logger = logging.getLogger("cognicore.research.experiment")
+
 
 
 @dataclass
@@ -27,10 +30,10 @@ class ExperimentConfig:
         return asdict(self)
 
     def print_config(self):
-        print(f"\n  ┌─ Experiment Config ─────────────────────┐")
+        logger.info(f"\n  ┌─ Experiment Config ─────────────────────┐")
         for k, v in self.to_dict().items():
-            print(f"  │ {k:<25} {str(v):>15} │")
-        print(f"  └───────────────────────────────────────────┘")
+            logger.info(f"  │ {k:<25} {str(v):>15} │")
+        logger.info(f"  └───────────────────────────────────────────┘")
 
 
 @dataclass
@@ -123,41 +126,41 @@ class ExperimentTracker:
 
         fname = f"{self.config.experiment_name}_{self.config.timestamp.replace(':', '-')}.json"
         path = self.output_dir / fname
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2, default=str)
         return str(path)
 
     def print_report(self):
         m = self.compute_metrics()
         if not m:
-            print("  No results to report.")
+            logger.info("  No results to report.")
             return
 
-        print(f"\n{'='*64}")
-        print(f"  COGNICORE RESEARCH BENCHMARK — RESULTS")
-        print(f"  {self.config.experiment_name} | {self.config.model} | seed={self.config.seed}")
-        print(f"{'='*64}")
+        logger.info(f"\n{'='*64}")
+        logger.info(f"  COGNICORE RESEARCH BENCHMARK — RESULTS")
+        logger.info(f"  {self.config.experiment_name} | {self.config.model} | seed={self.config.seed}")
+        logger.info(f"{'='*64}")
 
-        print(f"\n  {'Bug':<10} {'Cat':<15} {'Base':>5} {'Cogni':>6} {'Mem':>4} {'Refl':>5} {'Mut':>4} {'Rej':>4}")
-        print(f"  {'-'*55}")
+        logger.info(f"\n  {'Bug':<10} {'Cat':<15} {'Base':>5} {'Cogni':>6} {'Mem':>4} {'Refl':>5} {'Mut':>4} {'Rej':>4}")
+        logger.info(f"  {'-'*55}")
         for r in self.results:
-            print(f"  {r.bug_id:<10} {r.category:<15} "
+            logger.info(f"  {r.bug_id:<10} {r.category:<15} "
                   f"{'PASS' if r.baseline_solved else 'FAIL':>5} "
                   f"{'PASS' if r.cogni_solved else 'FAIL':>6} "
                   f"{r.cogni_memory_hits:>4} {r.cogni_reflections:>5} "
                   f"{r.cogni_mutations:>4} {r.cogni_rejections:>4}")
 
-        print(f"\n  {'Metric':<35} {'Baseline':>10} {'CogniCore':>10} {'Delta':>10}")
-        print(f"  {'-'*65}")
-        print(f"  {'Bugs Solved':<35} {m['baseline_solved']:>10} {m['cognicore_solved']:>10} {m['success_improvement_pct']:>+9.1f}%")
-        print(f"  {'Total Attempts':<35} {m['baseline_attempts']:>10} {m['cognicore_attempts']:>10} {m['attempt_reduction_pct']:>+9.1f}%")
-        print(f"  {'Repeated Patches':<35} {m['baseline_repeated']:>10} {m['cognicore_repeated']:>10} {m['repeat_reduction_pct']:>+9.1f}%")
-        print(f"  {'Memory Retrievals':<35} {'--':>10} {m['memory_retrievals']:>10}")
-        print(f"  {'Reflections':<35} {'--':>10} {m['reflections']:>10}")
-        print(f"  {'Strategy Mutations':<35} {'--':>10} {m['strategy_mutations']:>10}")
-        print(f"  {'Patch Rejections':<35} {'--':>10} {m['patch_rejections']:>10}")
+        logger.info(f"\n  {'Metric':<35} {'Baseline':>10} {'CogniCore':>10} {'Delta':>10}")
+        logger.info(f"  {'-'*65}")
+        logger.info(f"  {'Bugs Solved':<35} {m['baseline_solved']:>10} {m['cognicore_solved']:>10} {m['success_improvement_pct']:>+9.1f}%")
+        logger.info(f"  {'Total Attempts':<35} {m['baseline_attempts']:>10} {m['cognicore_attempts']:>10} {m['attempt_reduction_pct']:>+9.1f}%")
+        logger.info(f"  {'Repeated Patches':<35} {m['baseline_repeated']:>10} {m['cognicore_repeated']:>10} {m['repeat_reduction_pct']:>+9.1f}%")
+        logger.info(f"  {'Memory Retrievals':<35} {'--':>10} {m['memory_retrievals']:>10}")
+        logger.info(f"  {'Reflections':<35} {'--':>10} {m['reflections']:>10}")
+        logger.info(f"  {'Strategy Mutations':<35} {'--':>10} {m['strategy_mutations']:>10}")
+        logger.info(f"  {'Patch Rejections':<35} {'--':>10} {m['patch_rejections']:>10}")
 
-        print(f"\n  VERDICT:")
+        logger.info(f"\n  VERDICT:")
         checks = [
             ("CogniCore solves >= baseline", m['cognicore_solved'] >= m['baseline_solved']),
             ("Repeated patches reduced", m['cognicore_repeated'] <= m['baseline_repeated']),
@@ -168,5 +171,5 @@ class ExperimentTracker:
         ]
         for label, ok in checks:
             s = "\033[32mPROVEN\033[0m" if ok else "\033[31mNOT PROVEN\033[0m"
-            print(f"  [{s}] {label}")
-        print(f"{'='*64}")
+            logger.info(f"  [{s}] {label}")
+        logger.info(f"{'='*64}")

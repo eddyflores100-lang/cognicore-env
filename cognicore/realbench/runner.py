@@ -10,6 +10,8 @@ from dataclasses import dataclass, field, asdict
 from typing import Any, Callable, Dict, List, Optional
 from pathlib import Path
 from cognicore.runtime import CogniCoreRuntime, RuntimeConfig
+import logging
+
 
 logger = logging.getLogger("cognicore.realbench")
 
@@ -124,17 +126,17 @@ class BenchmarkRunner:
         Returns comparison results.
         """
         if verbose:
-            print(f"\n  Running {self.name}: {len(self.tasks)} tasks")
-            print(f"  Mode: A/B comparison (Baseline vs CogniCore)")
+            logger.info(f"\n  Running {self.name}: {len(self.tasks)} tasks")
+            logger.info(f"  Mode: A/B comparison (Baseline vs CogniCore)")
 
         # --- BASELINE RUN (no cognition) ---
         if verbose:
-            print(f"\n  [A] BASELINE (no memory, no reflection)")
+            logger.info(f"\n  [A] BASELINE (no memory, no reflection)")
         baseline_results = self._run_baseline(agent_fn, max_retries, verbose)
 
         # --- COGNICORE RUN (with cognition) ---
         if verbose:
-            print(f"\n  [B] COGNICORE (memory + reflection enabled)")
+            logger.info(f"\n  [B] COGNICORE (memory + reflection enabled)")
         runtime = CogniCoreRuntime(config=self.runtime_config, name=self.name)
         cogni_results = self._run_cognicore(agent_fn, runtime, max_retries, verbose)
 
@@ -169,7 +171,7 @@ class BenchmarkRunner:
             results.append(tr)
             if verbose:
                 s = "PASS" if tr.success else "FAIL"
-                print(f"    [{s}] {task['task_id']} ({tr.attempts} attempts, {tr.duration_ms:.0f}ms)")
+                logger.info(f"    [{s}] {task['task_id']} ({tr.attempts} attempts, {tr.duration_ms:.0f}ms)")
 
         return results
 
@@ -201,7 +203,7 @@ class BenchmarkRunner:
                 s = "PASS" if tr.success else "FAIL"
                 mem = " [MEM]" if tr.memory_used else ""
                 refl = " [REFL]" if tr.reflection_used else ""
-                print(f"    [{s}] {task['task_id']} ({tr.attempts} attempts, {tr.duration_ms:.0f}ms){mem}{refl}")
+                logger.info(f"    [{s}] {task['task_id']} ({tr.attempts} attempts, {tr.duration_ms:.0f}ms){mem}{refl}")
 
         return results
 

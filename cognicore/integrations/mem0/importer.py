@@ -483,7 +483,7 @@ def import_bundle(
         "sqlite_db_path": db_path,
     }
     meta_path = os.path.join(import_dir, "metadata.json")
-    with open(meta_path, "w") as f:
+    with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
 
     return ImportReceipt(

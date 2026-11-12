@@ -5,6 +5,9 @@ Posts memory-informed review comments on risky patterns.
 import os, json, re
 from cognicore.integrations.task_queue import NexusTask, TaskSource
 from cognicore.research.persistent_store import PersistentCognitionStore
+import logging
+logger = logging.getLogger("cognicore.integrations.pr_reviewer")
+
 
 try:
     from github import Github
@@ -173,4 +176,4 @@ class PRReviewer:
             pr = repo.get_pull(pr_number)
             pr.create_issue_comment(body)
         except Exception as e:
-            print(f"  [PR Review] Failed to post: {e}")
+            logger.info(f"  [PR Review] Failed to post: {e}")

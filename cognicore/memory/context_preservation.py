@@ -118,10 +118,10 @@ def _extract_sentences(text: str) -> List[str]:
         return []
     # Protect decimal numbers (e.g. 98.2, 98. 2) so dots aren't treated as sentence boundaries
     protected_text = re.sub(r'(\d+)\.\s*(\d+)', r'\1__DOT__\2', text)
-    
+
     # Split on periods, exclamation marks, question marks followed by space/newline, or newlines
     raw_sentences = re.split(r'(?<=[.!?])\s+|\n+', protected_text)
-    
+
     # Restore decimal points
     restored = [s.replace("__DOT__", ".").strip() for s in raw_sentences]
     return [s for s in restored if s and len(s) > 5]
@@ -174,7 +174,7 @@ def compress_context(
         return json.dumps(res, indent=2)
 
     tokens_before = TokenBudget.estimate_tokens(conversation)
-    
+
     # Separate older messages vs verbatim recent messages
     if len(conversation) > keep_last_n:
         older_messages = conversation[:-keep_last_n]
@@ -227,16 +227,16 @@ def compress_context(
 
             # 1. Key numbers / metrics (Strict Bug 2 rules)
             is_number_fact = _is_key_number_line(cleaned)
-            
+
             # 2. Decisions made
             is_decision = any(w in sl for w in ["decid", "agreed", "chose", "opted", "selected", "will use", "architecture", "design choice", "settled on", "going with", "determined"])
-            
+
             # 3. Problems solved
             is_problem_solved = any(w in sl for w in ["fixed", "solv", "resolv", "bugfix", "repaired", "patched", "fix for", "solution", "working now", "corrected"])
-            
+
             # 4. Next steps
             is_next_step = any(w in sl for w in ["next step", "todo", "action item", "will implement", "plan to", "need to", "must do", "critical next", "deploy", "upcoming", "priority"])
-            
+
             # 5. Ideas discussed
             is_idea = any(w in sl for w in ["proposal", "propose", "suggest", "idea", "concept", "discuss", "feature", "potential", "strategy", "explore"])
 
@@ -379,7 +379,7 @@ def save_session(
     timestamp = time.time()
     dt_str = datetime.fromtimestamp(timestamp).strftime("%Y%m%d_%H%M%S")
     session_id = f"sess_{dt_str}"
-    
+
     if not session_name:
         date_pretty = datetime.fromtimestamp(timestamp).strftime("%b %d, %Y")
         session_name = f"Session {date_pretty}"
@@ -542,7 +542,7 @@ def resume_session(
         latest_sess = session_rows[0]
         dt_formatted = datetime.fromtimestamp(latest_sess["timestamp"]).strftime("%d %b %Y")
         lines.append(f"Last session ({dt_formatted}):")
-        
+
         # Fetch session summary memory text
         summary_row = backend._get_conn().execute(
             "SELECT text FROM memory_entries WHERE entry_id = ?", (latest_sess["summary_memory_id"],)
@@ -560,7 +560,7 @@ def resume_session(
         fact_results = backend.search(query, top_k=5)
     else:
         fact_results = backend.search("", top_k=5)
-    
+
     if fact_results:
         lines.append("Key facts:")
         for r in fact_results[:5]:
@@ -586,7 +586,7 @@ def resume_session(
 
     brief_text = "\n".join(lines).strip()
     token_count = TokenBudget.estimate_tokens(brief_text)
-    
+
     return f"{brief_text}\n\n=== END CONTEXT | {token_count} tokens ==="
 
 

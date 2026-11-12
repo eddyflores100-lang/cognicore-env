@@ -46,7 +46,7 @@ class Reflection:
 
         for entry in entries:
             predicted = str(entry.get("predicted") or entry.get("action") or "").strip()
-            
+
             if entry.get("correct") is True:
                 good[predicted] = good.get(predicted, 0) + 1
             elif entry.get("correct") is False:

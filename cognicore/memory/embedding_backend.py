@@ -22,11 +22,11 @@ class BasicEmbeddingBackend(MemoryBackend):
         self.reranker = reranker
         self.max_size = max_size
         self.persistence_path = Path(persistence_path).expanduser() if persistence_path else None
-        
+
         self.entries: List[MemoryEntry] = []
         self.vectors: List[List[float]] = []
         self._next_id = 1
-        
+
         self.temporal_engine = TemporalResolutionEngine(self)
 
         self.load()
@@ -36,24 +36,24 @@ class BasicEmbeddingBackend(MemoryBackend):
             # simple eviction: remove oldest
             self.entries.pop(0)
             self.vectors.pop(0)
-            
+
         entry_id = str(self._next_id)
         self._next_id += 1
         entry.entry_id = entry_id
-        
+
         # We embed the "text" by default. If text is empty, embed action.
         text_to_embed = entry.text or entry.action
         vector = self.provider.embed(text_to_embed)
-        
+
         # normalize vector for cosine similarity via dot product
         norm = sum(x*x for x in vector) ** 0.5
         if norm > 0:
             vector = [x / norm for x in vector]
-            
+
         self.entries.append(entry)
         self.vectors.append(vector)
         self.save()
-        
+
         event_bus.publish("on_store", entry=entry, entry_id=entry_id)
         return entry_id
 
@@ -72,12 +72,12 @@ class BasicEmbeddingBackend(MemoryBackend):
                candidate_k: int = 20) -> List[SearchResult]:
         if not self.entries:
             return []
-            
+
         query_vec = self.provider.embed(query)
         norm = sum(x*x for x in query_vec) ** 0.5
         if norm > 0:
             query_vec = [x / norm for x in query_vec]
-            
+
         results = []
         for entry, vector in zip(self.entries, self.vectors):
             if not entry.is_searchable:
@@ -88,32 +88,32 @@ class BasicEmbeddingBackend(MemoryBackend):
                 continue
             if scope_id and entry.scope_id != scope_id:
                 continue
-                
+
             # Dot product (both are normalized)
             score = sum(a * b for a, b in zip(query_vec, vector))
             results.append(SearchResult(entry=entry, score=score, source="embedding"))
-            
+
         # Sort by embedding score descending
         results.sort(key=lambda x: x.score, reverse=True)
-        
+
         # Apply Reranker if available
         if self.reranker and len(results) > 0:
             candidates = results[:candidate_k]
             candidate_texts = [res.entry.text or res.entry.action for res in candidates]
             rerank_scores = self.reranker.rerank(query, candidate_texts)
-            
+
             for i, res in enumerate(candidates):
                 res.score = rerank_scores[i]
                 res.source = "cross-encoder"
-                
+
             # Re-sort candidates by cross-encoder score
             candidates.sort(key=lambda x: x.score, reverse=True)
             results = candidates + results[candidate_k:] # keep the rest for temporal engine just in case
-            
+
         # Apply temporal resolution
         resolved_results = self.temporal_engine.resolve(results, question_timestamp)
         final_results = resolved_results[:top_k]
-        
+
         event_bus.publish("on_search", query=query, top_k=top_k, results=final_results)
         return final_results
 
@@ -175,7 +175,7 @@ class BasicEmbeddingBackend(MemoryBackend):
     def save(self) -> None:
         if not self.persistence_path:
             return
-            
+
         data = {
             "entries": [e.to_dict() for e in self.entries],
             "vectors": self.vectors,
@@ -190,7 +190,7 @@ class BasicEmbeddingBackend(MemoryBackend):
     def load(self) -> None:
         if not self.persistence_path or not self.persistence_path.exists():
             return
-            
+
         try:
             data = json.loads(self.persistence_path.read_text(encoding="utf-8"))
             self.entries = [MemoryEntry.from_dict(d) for d in data.get("entries", [])]

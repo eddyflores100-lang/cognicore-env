@@ -19,7 +19,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
                 "The 'openai' package is required for OpenAIEmbeddingProvider. "
                 "Install it with: pip install openai"
             )
-        
+
         self.model_name = model_name
         self._dimension = dimension
         self.client = openai.OpenAI(api_key=api_key)

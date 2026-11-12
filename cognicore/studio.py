@@ -43,7 +43,7 @@ STUDIO_HTML = r"""<!DOCTYPE html>
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
     --radius: 6px;
   }
-  
+
   body { font-family: var(--font-sans); background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 
   /* Header */
@@ -93,21 +93,21 @@ STUDIO_HTML = r"""<!DOCTYPE html>
   .table-wrapper { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
   th { padding: 12px 16px; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border); background: var(--bg-card); }
-  
+
   .memory-row { cursor: pointer; transition: background 0.1s; }
   .memory-row:hover { background: var(--bg-hover) !important; }
   .memory-row td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   .memory-row td:first-child { width: 40px; text-align: center; }
-  
+
   .memory-details-row { display: none; background: var(--bg-details); }
   .memory-details-row.open { display: table-row; }
   .memory-details-row td { padding: 16px; border-bottom: 1px solid var(--border); box-shadow: inset 0 4px 6px -4px rgba(0,0,0,0.5); }
-  
+
   .details-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
   .details-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
   .json-block { background: #000; border: 1px solid var(--border); padding: 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 11px; color: #a1a1aa; overflow-x: auto; white-space: pre; }
   .full-text { font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; }
-  
+
   .action-buttons { display: flex; gap: 8px; margin-top: 16px; }
   .btn-small { background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border); padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 500; cursor: pointer; transition: 0.15s; }
   .btn-small:hover { background: var(--border); }
@@ -118,21 +118,21 @@ STUDIO_HTML = r"""<!DOCTYPE html>
   .badge.danger { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); border-color: rgba(239, 68, 68, 0.2); }
   .badge.success { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); border-color: rgba(16, 185, 129, 0.2); }
   .badge.default { background: rgba(255, 255, 255, 0.1); color: var(--text-main); border-color: var(--border); }
-  
+
   .entity-tag { display: inline-flex; font-size: 10px; padding: 2px 6px; background: #1a1a1a; border: 1px solid #333; border-radius: 4px; color: #ccc; margin-top: 4px; margin-right: 4px; }
   .mono { font-family: var(--font-mono); font-size: 12px; }
 
   /* Inputs & Controls */
   .controls { display: flex; gap: 12px; align-items: center; }
   input[type="checkbox"] { accent-color: var(--text-main); width: 14px; height: 14px; cursor: pointer; }
-  
+
   .select-input, .text-input { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 8px 12px; border-radius: var(--radius); font-family: var(--font-mono); font-size: 13px; transition: border-color 0.15s; }
   .text-input { width: 250px; }
   .select-input { width: 140px; cursor: pointer; font-family: var(--font-sans); }
   .text-input:focus, .select-input:focus { outline: none; border-color: var(--text-muted); }
-  
+
   input.search-bar { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%23a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>'); background-repeat: no-repeat; background-position: 12px center; padding-left: 36px; }
-  
+
   button.btn { background: var(--text-main); color: var(--bg-main); border: 1px solid var(--text-main); padding: 8px 16px; border-radius: var(--radius); font-family: var(--font-sans); font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; display: flex; align-items: center; gap: 6px; }
   button.btn:hover { opacity: 0.9; }
   button.btn-outline { background: transparent; color: var(--text-main); border-color: var(--border); }
@@ -143,7 +143,7 @@ STUDIO_HTML = r"""<!DOCTYPE html>
   .graph-node { position: absolute; width: 12px; height: 12px; background: var(--accent-blue); border-radius: 50%; box-shadow: 0 0 12px var(--accent-blue); cursor: pointer; transition: transform 0.2s; }
   .graph-node:hover { transform: scale(1.5); }
   .graph-edge { position: absolute; background: var(--border-hover); height: 1px; transform-origin: left center; }
-  
+
   /* Playground */
   .playground-split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; height: 500px; }
   .pg-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; }
@@ -177,7 +177,7 @@ STUDIO_HTML = r"""<!DOCTYPE html>
   .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%; }
   input:checked + .slider { background-color: var(--text-main); }
   input:checked + .slider:before { transform: translateX(16px); background-color: var(--bg-main); }
-  
+
   .empty-state { padding: 48px; text-align: center; color: var(--text-muted); font-size: 14px; }
 </style>
 </head>
@@ -207,10 +207,10 @@ STUDIO_HTML = r"""<!DOCTYPE html>
 </div>
 
 <div class="container">
-  
+
   <!-- HEALTH TAB -->
   <div id="tab-health" class="tab-content active">
-    
+
     <div class="insights-scroll">
       <div class="insight-card">
         <div class="insight-title">Consolidated Rule</div>
@@ -240,7 +240,7 @@ STUDIO_HTML = r"""<!DOCTYPE html>
         <div class="metric-value danger" id="stat-negative">0</div>
       </div>
     </div>
-    
+
     <div class="section-header-row">
       <div style="display: flex; gap: 12px; align-items: center;">
         <h2 class="section-title" style="margin: 0;">Memory Entries</h2>
@@ -368,7 +368,7 @@ STUDIO_HTML = r"""<!DOCTYPE html>
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
-    
+
     // Find the button using attribute selector safely
     const btns = document.querySelectorAll('.tabs button');
     btns.forEach(btn => {
@@ -398,13 +398,13 @@ STUDIO_HTML = r"""<!DOCTYPE html>
     const textInput = document.getElementById('search-input').value.toLowerCase();
     const stateInput = document.getElementById('filter-state').value;
     const utilInput = document.getElementById('filter-util').value;
-    
+
     const rows = document.querySelectorAll('.memory-row');
     rows.forEach(row => {
       const text = row.querySelector('.mono').innerText.toLowerCase();
       const state = row.getAttribute('data-state');
       const utilScore = parseFloat(row.getAttribute('data-util'));
-      
+
       let textMatch = text.includes(textInput);
       let stateMatch = (stateInput === 'ALL') || (state === stateInput);
       let utilMatch = true;
@@ -438,10 +438,10 @@ STUDIO_HTML = r"""<!DOCTYPE html>
        const y = Math.random() * 90 + 5;
        node.style.left = `${x}%`;
        node.style.top = `${y}%`;
-       
+
        if(Math.random() > 0.8) node.style.background = 'var(--accent-purple)';
        if(Math.random() > 0.9) node.style.background = 'var(--accent-red)';
-       
+
        container.appendChild(node);
        nodes.push({el: node, x, y});
     }
@@ -450,19 +450,19 @@ STUDIO_HTML = r"""<!DOCTYPE html>
        const n1 = nodes[Math.floor(Math.random() * nodes.length)];
        const n2 = nodes[Math.floor(Math.random() * nodes.length)];
        if(n1 === n2) continue;
-       
+
        const dx = n2.x - n1.x;
        const dy = n2.y - n1.y;
        const length = Math.sqrt(dx*dx + dy*dy);
        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-       
+
        const edge = document.createElement('div');
        edge.className = 'graph-edge';
        edge.style.width = `${length}%`;
        edge.style.left = `${n1.x + 0.5}%`;
        edge.style.top = `${n1.y + 0.5}%`;
        edge.style.transform = `rotate(${angle}deg)`;
-       
+
        container.appendChild(edge);
     }
   }
@@ -471,14 +471,14 @@ STUDIO_HTML = r"""<!DOCTYPE html>
   async function testRetrieval() {
     const query = document.getElementById('pg-input').value;
     if(!query) return;
-    
+
     const results = document.getElementById('pg-results');
     results.innerHTML = `
       <div style="color: var(--text-muted); font-size: 13px; margin-top: 10px; font-family: var(--font-mono)">
          <div>[Hop 1] Querying ChromaDB Vector Engine...</div>
       </div>
     `;
-    
+
     setTimeout(() => {
         results.innerHTML += `
           <div style="color: var(--text-muted); font-size: 13px; font-family: var(--font-mono); margin-top: 8px;">
@@ -491,22 +491,22 @@ STUDIO_HTML = r"""<!DOCTYPE html>
     try {
       const res = await fetch('/api/memory/query?query=' + encodeURIComponent(query));
       const data = await res.json();
-      
+
       setTimeout(() => {
           results.innerHTML = '';
           if(data.length === 0) {
               results.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 40px;">No relevant memories found.</div>';
               return;
           }
-          
+
           data.forEach(item => {
               let color = 'var(--text-muted)';
               if(item.similarity > 0.4) color = 'var(--accent-green)';
               else if(item.similarity < 0.1) color = 'var(--accent-red)';
-              
+
               let hopBadge = item.hop === 2 ? '<span class="badge" style="background: rgba(139, 92, 246, 0.1); color: var(--accent-purple); border-color: rgba(139, 92, 246, 0.2);">Multi-Hop</span>' : '<span class="badge default">Direct Match</span>';
               let sharedBadge = item.agent_id !== "test_agent" ? '<span class="badge" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border-color: rgba(59, 130, 246, 0.2); margin-left: 5px;">Global Pool</span>' : '';
-              
+
               results.innerHTML += `
                 <div class="pg-retrieval-item" style="border-left-color: ${color}">
                   <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
@@ -545,36 +545,36 @@ STUDIO_HTML = r"""<!DOCTYPE html>
     try {
       const res = await fetch('/api/memory/health');
       const data = await res.json();
-      
+
       document.getElementById('stat-total').innerText = data.total_memories || 0;
       document.getElementById('stat-utility').innerText = (data.avg_utility || 0).toFixed(2);
       document.getElementById('stat-negative').innerText = data.negative_transfer_count || 0;
-      
+
       const res2 = await fetch('/api/memory/entries');
       const entries = await res2.json();
-      
+
       const tbody = document.getElementById('memory-table');
       tbody.innerHTML = '';
-      
+
       if (entries.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No memory entries found in local stores.</td></tr>';
         return;
       }
-      
+
       entries.sort((a, b) => b.utility_score - a.utility_score);
-      
+
       entries.forEach((e, idx) => {
         const isNeg = e.negative_transfer;
-        const statusBadge = isNeg 
+        const statusBadge = isNeg
           ? '<span class="badge danger">Negative Transfer</span>'
           : (e.utility_score > 0.5 ? '<span class="badge success">Highly Useful</span>' : '<span class="badge default">Neutral</span>');
-          
+
         const rowId = `row-${idx}`;
         const rawJson = JSON.stringify(e, null, 2);
-        
+
         // Pick random tag
         const tagHTML = Math.random() > 0.3 ? mockTags[Math.floor(Math.random()*mockTags.length)] : '';
-        
+
         // Primary Row
         tbody.innerHTML += `
           <tr class="memory-row" onclick="toggleRow('${rowId}')" data-state="${e.state}" data-util="${e.utility_score || 0}">
@@ -589,7 +589,7 @@ STUDIO_HTML = r"""<!DOCTYPE html>
             <td>${statusBadge}</td>
           </tr>
         `;
-        
+
         // Details Row (Accordion)
         tbody.innerHTML += `
           <tr class="memory-details-row" id="details-${rowId}">
@@ -621,25 +621,25 @@ STUDIO_HTML = r"""<!DOCTYPE html>
   async function loadTimeline() {
     const taskId = document.getElementById('task-id-input').value;
     if (!taskId) return;
-    
+
     const list = document.getElementById('timeline-list');
     list.innerHTML = '<div style="padding: 24px 0; color: var(--text-muted); font-size: 14px;">Loading...</div>';
-    
+
     try {
       const res = await fetch(`/api/replay/timeline?task_id=${taskId}`);
       const data = await res.json();
-      
+
       if (data.error) {
         list.innerHTML = `<div style="padding: 24px 0; color: var(--accent-red); font-size: 14px;">${data.error}</div>`;
         return;
       }
-      
+
       list.innerHTML = '';
       let items = data.items || data;
       if (!Array.isArray(items)) {
           items = data.timeline_items ? data.timeline_items : [items];
       }
-      
+
       if (items.length === 0) {
           list.innerHTML = '<div style="padding: 24px 0; color: var(--text-muted); font-size: 14px;">No events found.</div>';
           return;
@@ -649,7 +649,7 @@ STUDIO_HTML = r"""<!DOCTYPE html>
         const cost = i.cumulative_cost !== undefined ? i.cumulative_cost : (i.cost || 0);
         const tokens = i.cumulative_tokens !== undefined ? i.cumulative_tokens : (i.tokens || 0);
         const contentText = i.action || i.output_preview || i.type || '...';
-        
+
         const itemDiv = document.createElement('div');
         itemDiv.className = 'timeline-event';
         itemDiv.onclick = function() { toggleTimeline(this); };
@@ -687,7 +687,7 @@ def create_studio_app():
     except ImportError:
         logger.error("FastAPI is required for the Studio. Run: pip install fastapi uvicorn")
         raise
-        
+
     app = FastAPI(title="CogniCore Studio API")
     app.add_middleware(
         CORSMiddleware,
@@ -705,13 +705,13 @@ def create_studio_app():
         total_memories = 0
         total_utility = 0.0
         negative_count = 0
-        
+
         try:
             from cognicore.memory.utility import UtilityScorer
             scorer = UtilityScorer()
         except ImportError:
             return {"total_memories": 0, "avg_utility": 0, "negative_transfer_count": 0}
-            
+
         try:
             from cognicore.memory.chroma_backend import ChromaMemoryBackend
             backend = ChromaMemoryBackend()
@@ -729,7 +729,7 @@ def create_studio_app():
                 for agent_id in os.listdir(storage_dir):
                     mem_path = os.path.join(storage_dir, agent_id, "memory.json")
                     if os.path.exists(mem_path):
-                        with open(mem_path, "r") as f:
+                        with open(mem_path, "r", encoding="utf-8") as f:
                             try:
                                 entries_data = json.load(f)
                                 if isinstance(entries_data, dict):
@@ -742,7 +742,7 @@ def create_studio_app():
                                         negative_count += 1
                             except Exception:
                                 pass
-                                
+
         avg_util = total_utility / total_memories if total_memories > 0 else 0.0
         return {
             "total_memories": total_memories,
@@ -758,7 +758,7 @@ def create_studio_app():
             scorer = UtilityScorer()
         except ImportError:
             return []
-            
+
         try:
             from cognicore.memory.chroma_backend import ChromaMemoryBackend
             backend = ChromaMemoryBackend()
@@ -775,7 +775,7 @@ def create_studio_app():
                 for agent_id in os.listdir(storage_dir):
                     mem_path = os.path.join(storage_dir, agent_id, "memory.json")
                     if os.path.exists(mem_path):
-                        with open(mem_path, "r") as f:
+                        with open(mem_path, "r", encoding="utf-8") as f:
                             try:
                                 entries_data = json.load(f)
                                 if isinstance(entries_data, dict):
@@ -792,25 +792,25 @@ def create_studio_app():
                             except Exception:
                                 pass
         return all_entries
-        
+
     @app.get("/api/memory/query")
     def query_memory(query: str):
         import logging
         logger = logging.getLogger("studio_query")
-        
+
         try:
             from cognicore.memory.chroma_backend import ChromaMemoryBackend
             backend = ChromaMemoryBackend()
         except ImportError:
             return {"error": "ChromaMemoryBackend is not available."}
-            
+
         final_results = []
         try:
             from cognicore.memory.base import MemoryScope
-            
+
             # Use the global pool scope to fetch across all agents
             results = backend.search(query=query, top_k=15, scope=MemoryScope.GLOBAL)
-            
+
             for res in results:
                 entry = res.entry
                 final_results.append({
@@ -824,13 +824,13 @@ def create_studio_app():
         except Exception as e:
             logger.error(f"Error querying memory backend: {e}")
             return {"error": str(e)}
-            
+
         # Deduplicate based on text
         unique = {}
         for r in final_results:
             if r['text'] not in unique:
                 unique[r['text']] = r
-        
+
         ret = list(unique.values())
         ret.sort(key=lambda x: x['similarity'], reverse=True)
         return {"items": ret[:10]}

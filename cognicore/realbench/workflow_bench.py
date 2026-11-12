@@ -8,6 +8,9 @@ from __future__ import annotations
 import time, random, json
 from typing import Any, Callable, Dict, List, Optional
 from cognicore.realbench.runner import BenchmarkRunner
+import logging
+logger = logging.getLogger("cognicore.realbench.workflow_bench")
+
 
 
 # ─────────────────────────────────────────────────────────────
@@ -16,7 +19,7 @@ from cognicore.realbench.runner import BenchmarkRunner
 
 class APISimulator:
     """Simulates real API behavior: latency, failures, rate limits."""
-    
+
     def __init__(self, fail_rate: float = 0.3, latency_ms: float = 10):
         self.fail_rate = fail_rate
         self.latency_ms = latency_ms
@@ -26,7 +29,7 @@ class APISimulator:
     def call(self, endpoint: str, data: dict = None) -> dict:
         self.call_count += 1
         time.sleep(self.latency_ms / 1000)
-        
+
         if random.random() < self.fail_rate:
             self.failures += 1
             error_types = [
@@ -36,7 +39,7 @@ class APISimulator:
                 {"status": 408, "error": "Request timeout"},
             ]
             raise ConnectionError(json.dumps(random.choice(error_types)))
-        
+
         return {"status": 200, "endpoint": endpoint, "data": data, "ok": True}
 
 
@@ -81,7 +84,7 @@ WORKFLOW_TASKS = [
 
 def workflow_agent(task_data: dict, context: dict) -> dict:
     """A workflow agent that executes multi-step pipelines.
-    
+
     With CogniCore context, it:
     - Knows which steps tend to fail
     - Adds retry logic for flaky steps
@@ -91,15 +94,15 @@ def workflow_agent(task_data: dict, context: dict) -> dict:
     steps = task_data["steps"]
     completed = []
     errors = []
-    
+
     # CogniCore context
     failures_to_avoid = context.get("failures_to_avoid", [])
     reflection_hint = context.get("reflection_hint", "")
     has_memory = len(context.get("memory", [])) > 0
-    
+
     # Determine retry strategy based on context
     max_retries = 3 if has_memory else 1  # More retries if we have memory
-    
+
     for step in steps:
         success = False
         for attempt in range(max_retries):
@@ -112,12 +115,12 @@ def workflow_agent(task_data: dict, context: dict) -> dict:
                 errors.append({"step": step, "attempt": attempt, "error": str(e)})
                 if has_memory:
                     time.sleep(0.01 * (attempt + 1))  # Backoff with memory
-        
+
         if not success:
             # With memory, try to skip non-critical steps
             if has_memory and step not in ["process_payment", "deploy_prod"]:
                 completed.append(f"{step}_skipped")
-    
+
     return {
         "completed": completed,
         "total_steps": len(steps),

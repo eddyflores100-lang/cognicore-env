@@ -140,7 +140,7 @@ CogniCore provides cognitive RL environments with:
 """
 
     card_path = os.path.join(local_dir, "README.md")
-    with open(card_path, "w") as f:
+    with open(card_path, "w", encoding="utf-8") as f:
         f.write(card)
 
     # Metadata

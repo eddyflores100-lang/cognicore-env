@@ -22,10 +22,10 @@ class GraphMemoryBackend(MemoryBackend):
                 "The 'networkx' package is required for GraphMemoryBackend. "
                 "Install it with: pip install networkx"
             )
-        
+
         self.backend = primary_backend
         self.graph = nx.DiGraph()
-        
+
     def _extract_entities(self, text: str) -> List[str]:
         # Simplistic entity extraction (in a real system, you'd use NER or an LLM)
         # Here we just use capitalization heuristics or assume the user passes entities in metadata
@@ -33,21 +33,21 @@ class GraphMemoryBackend(MemoryBackend):
 
     def store(self, entry: MemoryEntry) -> str:
         entry_id = self.backend.store(entry)
-        
+
         # Add to graph
         self.graph.add_node(entry_id, category=entry.category, scope=entry.scope.value, correct=entry.correct)
-        
+
         # Link category node to this entry
         cat_node = f"category:{entry.category}"
         self.graph.add_node(cat_node, type="category")
         self.graph.add_edge(cat_node, entry_id, relation="contains")
-        
+
         # Link scope node
         if entry.scope != MemoryScope.GLOBAL:
             scope_node = f"scope:{entry.scope.value}:{entry.scope_id}"
             self.graph.add_node(scope_node, type="scope")
             self.graph.add_edge(scope_node, entry_id, relation="owns")
-            
+
         # Example of handling explicit entities in metadata
         if "entities" in entry.metadata and isinstance(entry.metadata["entities"], list):
             for entity in entry.metadata["entities"]:
@@ -61,15 +61,15 @@ class GraphMemoryBackend(MemoryBackend):
                category: Optional[str] = None,
                scope: Optional[MemoryScope] = None,
                scope_id: Optional[str] = None) -> List[SearchResult]:
-        
+
         # Base search
         base_results = self.backend.search(query, top_k=top_k * 2, category=category, scope=scope, scope_id=scope_id)
-        
+
         # Enhance with graph proximity (simple pagerank or neighbor count boost)
         # For simplicity, we just return the base results but source marked as 'graph'
         for res in base_results:
             res.source = "graph_enhanced"
-            
+
         return base_results[:top_k]
 
     def get_by_category(self, category: str, top_k: int = 5,

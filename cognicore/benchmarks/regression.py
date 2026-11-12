@@ -152,15 +152,15 @@ def _cli_main():
     if not args.current:
         from cognicore.benchmarks.suite import BenchmarkSuite
 
-        print("\n  No current results file — running quick benchmark...")
+        logger.info("\n  No current results file — running quick benchmark...")
         suite = BenchmarkSuite()
         result = suite.run(quick=True)
         current_path = "benchmark_output/_current_check.json"
         result.to_json(current_path)
         args.current = current_path
 
-    print(f"\n  Checking regressions: {args.current} vs {args.baseline}")
-    print(f"  Thresholds: accuracy={args.accuracy_threshold:.0%}, latency={args.latency_threshold:.0%}\n")
+    logger.info(f"\n  Checking regressions: {args.current} vs {args.baseline}")
+    logger.info(f"  Thresholds: accuracy={args.accuracy_threshold:.0%}, latency={args.latency_threshold:.0%}\n")
 
     passed, messages = check_regression(
         args.current, args.baseline,
@@ -171,10 +171,10 @@ def _cli_main():
         print(msg)
 
     if passed:
-        print("\n  ✓ No regressions detected.\n")
+        logger.info("\n  ✓ No regressions detected.\n")
         sys.exit(0)
     else:
-        print("\n  ✗ Regressions detected! See above.\n")
+        logger.info("\n  ✗ Regressions detected! See above.\n")
         sys.exit(1)
 
 

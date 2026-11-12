@@ -6,6 +6,9 @@ import json, math, random, os, sys, ast
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from collections import defaultdict
 from cognicore.nexus.trajectory_store import TrajectoryStore
+import logging
+logger = logging.getLogger("cognicore.nexus.rl_policy")
+
 
 
 class PolicyFeatures:
@@ -88,7 +91,7 @@ class QLearningPolicyAgent:
 
             if (epoch + 1) % 5 == 0:
                 avg = total_reward / max(len(trajectories), 1)
-                print(f"  Epoch {epoch+1}/{epochs}: avg_reward={avg:+.3f}, "
+                logger.info(f"  Epoch {epoch+1}/{epochs}: avg_reward={avg:+.3f}, "
                       f"states={len(self.q_table)}, steps={self.training_steps}")
 
     def get_learned_policy_map(self):
@@ -116,11 +119,11 @@ class QLearningPolicyAgent:
             "training_steps": self.training_steps,
             "alpha": self.alpha, "gamma": self.gamma, "epsilon": self.epsilon
         }
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     def load(self, path):
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         self.training_steps = data["training_steps"]
         for k, v in data["q_table"].items():
@@ -129,47 +132,47 @@ class QLearningPolicyAgent:
 
 def train_policy():
     """Train RL policy from stored trajectories."""
-    print("=" * 60)
-    print("  NEXUS RL Policy Training")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("  NEXUS RL Policy Training")
+    logger.info("=" * 60)
 
     ts = TrajectoryStore()
     stats = ts.get_stats()
-    print(f"\n  Trajectory store: {stats['total_trajectories']} trajectories")
-    print(f"  Solved: {stats['solved']}")
-    print(f"  Policies: {stats['policies']}")
+    logger.info(f"\n  Trajectory store: {stats['total_trajectories']} trajectories")
+    logger.info(f"  Solved: {stats['solved']}")
+    logger.info(f"  Policies: {stats['policies']}")
 
     # Export and load
     export_path = ts.export_for_training()
-    with open(export_path) as f:
+    with open(export_path, encoding="utf-8") as f:
         trajectories = [json.loads(line) for line in f]
 
-    print(f"  Loaded {len(trajectories)} trajectories for training\n")
+    logger.info(f"  Loaded {len(trajectories)} trajectories for training\n")
 
     # Train
     agent = QLearningPolicyAgent(alpha=0.1, gamma=0.95, epsilon=0.05)
     agent.train_from_trajectories(trajectories, epochs=50)
 
     # Results
-    print(f"\n  Training complete: {agent.training_steps} updates")
-    print(f"  Unique states: {len(agent.q_table)}")
-    print(f"\n  Learned policy distribution:")
+    logger.info(f"\n  Training complete: {agent.training_steps} updates")
+    logger.info(f"  Unique states: {len(agent.q_table)}")
+    logger.info(f"\n  Learned policy distribution:")
     for policy, count in sorted(agent.summary().items(), key=lambda x: -x[1]):
         pct = 100 * count / max(len(agent.q_table), 1)
-        print(f"    {policy:<15} {count:>3} states ({pct:.0f}%)")
+        logger.info(f"    {policy:<15} {count:>3} states ({pct:.0f}%)")
 
     # Save model
     model_path = os.path.join(os.path.dirname(__file__), '..', '..', 'nexus_policy_model.json')
     agent.save(model_path)
-    print(f"\n  Model saved: {model_path}")
+    logger.info(f"\n  Model saved: {model_path}")
 
     # Show Q-values for sample states
-    print(f"\n  Sample Q-values:")
+    logger.info(f"\n  Sample Q-values:")
     for i, (state, q_vals) in enumerate(list(agent.q_table.items())[:5]):
         best = max(q_vals, key=q_vals.get)
-        print(f"    State {i}: best={best} Q={q_vals[best]:+.3f}")
+        logger.info(f"    State {i}: best={best} Q={q_vals[best]:+.3f}")
 
-    print("=" * 60)
+    logger.info("=" * 60)
     return agent
 
 

@@ -4,6 +4,9 @@ Reads error logs, generates fix, commits to same branch, re-triggers CI.
 """
 import os, re, json
 from cognicore.integrations.task_queue import NexusTask, TaskSource
+import logging
+logger = logging.getLogger("cognicore.integrations.ci_fixer")
+
 
 try:
     from github import Github
@@ -102,9 +105,9 @@ class CIFailureFixer:
             patch = result.get("patch", "")
             if patch:
                 # Would create/update file via GitHub API
-                print(f"  [CI] Fix committed to {repo_name}:{branch}")
+                logger.info(f"  [CI] Fix committed to {repo_name}:{branch}")
         except Exception as e:
-            print(f"  [CI] Commit failed: {e}")
+            logger.info(f"  [CI] Commit failed: {e}")
 
     def _escalate(self, repo_name, branch, task):
         """Escalate to human after max attempts."""
@@ -122,7 +125,7 @@ class CIFailureFixer:
                     f"*Automated by NEXUS*")
                 break
         except Exception as e:
-            print(f"  [CI] Escalation failed: {e}")
+            logger.info(f"  [CI] Escalation failed: {e}")
 
     @staticmethod
     def parse_error_type(error_text: str) -> str:

@@ -20,10 +20,10 @@ class LangfuseObserver:
                 "The 'langfuse' package is required for LangfuseObserver. "
                 "Install it with: pip install langfuse"
             )
-        
+
         # Will pick up LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST if kwargs are None
         self.langfuse = Langfuse(public_key=public_key, secret_key=secret_key, host=host)
-        
+
         # Automatically register
         event_bus.subscribe("on_store", self.on_store)
         event_bus.subscribe("on_search", self.on_search)
